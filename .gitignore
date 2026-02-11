@@ -4,8 +4,6 @@
 .LSOverride
 
 # Claude Code
-.claude/
-ai-context/
 
 # IDE
 .vscode/

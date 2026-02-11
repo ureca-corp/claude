@@ -1,5 +1,39 @@
 # Pseudocode 템플릿
 
+## 표준 Return 형식
+
+**모든 수도코드의 Return 문은 다음 구조를 따릅니다**:
+
+```
+Return {
+    status: "SUCCESS" | "ERROR_CODE",
+    message: "한글 메시지",
+    data: {...} | null
+}
+```
+
+**예시**:
+
+성공 시:
+```
+Return {
+    status: "SUCCESS",
+    message: "회원가입이 완료되었습니다",
+    data: {사용자 정보}
+}
+```
+
+오류 시:
+```
+Return {
+    status: "DUPLICATE_EMAIL",
+    message: "이미 가입된 이메일입니다",
+    data: null
+}
+```
+
+---
+
 ## 수도코드 작성 가이드
 
 ### 언제 수도코드가 필요한가?
@@ -67,9 +101,18 @@
 ```markdown
 \`\`\`
 1. userId로 사용자를 조회한다
-   - 없으면 404 오류 반환
+   - 없으면 Return {
+       status: "NOT_FOUND",
+       message: "존재하지 않는 사용자입니다",
+       data: null
+     }
 
 2. 조회한 사용자 정보를 반환한다
+   - Return {
+       status: "SUCCESS",
+       message: "프로필 조회가 완료되었습니다",
+       data: {사용자 정보}
+     }
 \`\`\`
 ```
 
@@ -92,10 +135,18 @@
 ```markdown
 \`\`\`
 1. userId로 사용자를 조회한다
-   - 없으면 404 오류 반환
+   - 없으면 Return {
+       status: "NOT_FOUND",
+       message: "존재하지 않는 사용자입니다",
+       data: null
+     }
 
 2. 요청자가 본인인지 확인한다
-   - 본인이 아니면 403 오류 반환
+   - 본인이 아니면 Return {
+       status: "FORBIDDEN",
+       message: "본인만 수정할 수 있습니다",
+       data: null
+     }
 
 3. 수정 가능한 필드만 업데이트한다
    - displayName
@@ -103,6 +154,11 @@
    - preferredLanguage
 
 4. 업데이트된 사용자 정보를 반환한다
+   - Return {
+       status: "SUCCESS",
+       message: "프로필 수정이 완료되었습니다",
+       data: {업데이트된 사용자 정보}
+     }
 \`\`\`
 ```
 
@@ -127,10 +183,18 @@
 ```markdown
 \`\`\`
 1. userId로 사용자를 조회한다
-   - 없으면 404 오류 반환
+   - 없으면 Return {
+       status: "NOT_FOUND",
+       message: "존재하지 않는 사용자입니다",
+       data: null
+     }
 
 2. 요청자가 본인인지 확인한다
-   - 본인이 아니면 403 오류 반환
+   - 본인이 아니면 Return {
+       status: "FORBIDDEN",
+       message: "본인만 탈퇴할 수 있습니다",
+       data: null
+     }
 
 3. 연결된 모든 데이터를 조회한다
    - 번역 기록 목록
@@ -144,6 +208,11 @@
 5. 사용자 엔티티를 삭제한다
 
 6. 삭제 완료 메시지와 개수를 반환한다
+   - Return {
+       status: "SUCCESS",
+       message: "회원 탈퇴가 완료되었습니다",
+       data: {deletedCount: {삭제된 총 개수}}
+     }
 \`\`\`
 ```
 
@@ -170,7 +239,11 @@
 1. 번역 API에 텍스트를 요청한다
    - 입력: sourceText, targetLanguage
    - 성공하면: 번역 결과를 받음
-   - 실패하면: 500 오류 반환
+   - 실패하면: Return {
+       status: "ERROR",
+       message: "서버 오류가 발생했습니다",
+       data: null
+     }
 
 2. 번역 기록을 생성한다
    - userId: 요청자
@@ -180,6 +253,11 @@
    - createdAt: 현재 시각
 
 3. 생성된 번역 기록을 반환한다
+   - Return {
+       status: "SUCCESS",
+       message: "번역이 완료되었습니다",
+       data: {번역 기록}
+     }
 \`\`\`
 ```
 
@@ -208,18 +286,30 @@
 ```markdown
 \`\`\`
 1. missionProgressId로 미션 진행 상태를 조회한다
-   - 없으면 404 오류 반환
+   - 없으면 Return {
+       status: "NOT_FOUND",
+       message: "존재하지 않는 미션 진행 상태입니다",
+       data: null
+     }
 
 2. 현재 상태를 확인한다
    - 현재 상태: IN_PROGRESS
 
 3. 완료 전이 가능 여부를 검증한다
    - IN_PROGRESS → COMPLETED 가능
-   - 다른 상태면: 400 오류 반환 ("진행 중인 미션만 완료할 수 있습니다")
+   - 다른 상태면: Return {
+       status: "INVALID_STATE_TRANSITION",
+       message: "진행 중인 미션만 완료할 수 있습니다",
+       data: null
+     }
 
 4. 완료 조건을 확인한다
    - 필요한 번역 개수 충족 여부
-   - 충족하지 않으면: 400 오류 반환 ("아직 N개의 번역이 필요합니다")
+   - 충족하지 않으면: Return {
+       status: "REQUIREMENT_NOT_MET",
+       message: "아직 N개의 번역이 필요합니다",
+       data: null
+     }
 
 5. 상태를 COMPLETED로 변경한다
 
@@ -228,6 +318,11 @@
 7. 보상을 지급한다 (있다면)
 
 8. 업데이트된 미션 진행 상태를 반환한다
+   - Return {
+       status: "SUCCESS",
+       message: "미션이 완료되었습니다",
+       data: {미션 진행 상태}
+     }
 \`\`\`
 ```
 
@@ -256,7 +351,11 @@
 ```markdown
 \`\`\`
 1. 재고를 확인한다
-   - 부족하면: 400 오류 반환 ("재고가 부족합니다")
+   - 부족하면: Return {
+       status: "OUT_OF_STOCK",
+       message: "재고가 부족합니다",
+       data: null
+     }
 
 2. 주문을 생성한다
    - userId: 구매자
@@ -266,15 +365,28 @@
 
 3. 재고를 차감한다
    - 각 주문 항목마다 재고 감소
-   - 실패하면: 주문 롤백 + 500 오류 반환
+   - 실패하면: 주문 롤백 + Return {
+       status: "ERROR",
+       message: "서버 오류가 발생했습니다",
+       data: null
+     }
 
 4. 결제를 요청한다
    - 결제 API 호출
-   - 실패하면: 주문 롤백 + 재고 복구 + 400 오류 반환
+   - 실패하면: 주문 롤백 + 재고 복구 + Return {
+       status: "PAYMENT_FAILED",
+       message: "결제에 실패했습니다",
+       data: null
+     }
 
 5. 주문 상태를 PAID로 변경한다
 
 6. 생성된 주문 정보를 반환한다
+   - Return {
+       status: "SUCCESS",
+       message: "주문이 완료되었습니다",
+       data: {주문 정보}
+     }
 \`\`\`
 ```
 
@@ -317,10 +429,16 @@
    - progress == 100: COMPLETED
 
 5. 진행률 정보를 반환한다
-   - progress: 66.7
-   - completedCount: 4
-   - requiredCount: 6
-   - status: IN_PROGRESS
+   - Return {
+       status: "SUCCESS",
+       message: "진행률 조회가 완료되었습니다",
+       data: {
+         progress: 66.7,
+         completedCount: 4,
+         requiredCount: 6,
+         status: "IN_PROGRESS"
+       }
+     }
 \`\`\`
 ```
 
@@ -398,24 +516,52 @@ if user.id != request.user.id:
 
 | 필드명 | 타입 | 설명 | 예시 |
 |--------|------|------|------|
+| status | 문자열 | 응답 상태 | SUCCESS |
 | message | 문자열 | 완료 메시지 | 회원 탈퇴가 완료되었습니다 |
+| data | 객체 | 삭제 정보 | (아래 참조) |
+
+#### data 객체
+
+| 필드명 | 타입 | 설명 | 예시 |
+|--------|------|------|------|
 | deletedCount | 숫자 | 삭제된 연관 데이터 수 | 15 |
 
-#### 오류
+#### 실패 (400 Bad Request)
 
-| 상태 | 조건 | 메시지 | 필드 예시 |
-|------|------|--------|-----------|
-| 404 | 사용자 없음 | 존재하지 않는 사용자입니다 | {"userId": "u_999"} |
-| 403 | 권한 없음 | 본인만 탈퇴할 수 있습니다 | {"userId": "u_123abc"} |
+**사용자 없음**:
+```json
+{
+  "status": "NOT_FOUND",
+  "message": "존재하지 않는 사용자입니다",
+  "data": null
+}
+```
+
+**권한 없음**:
+```json
+{
+  "status": "FORBIDDEN",
+  "message": "본인만 탈퇴할 수 있습니다",
+  "data": null
+}
+```
 
 ### 수도코드
 
 \`\`\`
 1. userId로 사용자를 조회한다
-   - 없으면 404 오류 반환 ("존재하지 않는 사용자입니다")
+   - 없으면 Return {
+       status: "NOT_FOUND",
+       message: "존재하지 않는 사용자입니다",
+       data: null
+     }
 
 2. 요청자가 본인인지 확인한다
-   - 본인이 아니면 403 오류 반환 ("본인만 탈퇴할 수 있습니다")
+   - 본인이 아니면 Return {
+       status: "FORBIDDEN",
+       message: "본인만 탈퇴할 수 있습니다",
+       data: null
+     }
 
 3. 연결된 모든 데이터를 조회한다
    - 번역 기록 목록
@@ -429,7 +575,10 @@ if user.id != request.user.id:
 5. 사용자 엔티티를 삭제한다
 
 6. 삭제 완료 메시지와 개수를 반환한다
-   - message: "회원 탈퇴가 완료되었습니다"
-   - deletedCount: {삭제된 총 개수}
+   - Return {
+       status: "SUCCESS",
+       message: "회원 탈퇴가 완료되었습니다",
+       data: {deletedCount: {삭제된 총 개수}}
+     }
 \`\`\`
 ```

@@ -13,6 +13,83 @@ description: API 상세 설계 - Request/Response 정확히 + 수도코드 (기�
 
 ---
 
+## 📋 필수 API 설계 표준
+
+### Response 모델 표준 형식 (절대 준수!)
+
+**모든 Response는 다음 형식을 따라야 함**:
+
+```json
+{
+  "status": "SUCCESS" | "ERROR" | "<SPECIFIC_ERROR_CODE>",
+  "message": "한글 메시지",
+  "data": {...} | null
+}
+```
+
+**예시 - 성공**:
+```json
+{
+  "status": "SUCCESS",
+  "message": "로그인 성공",
+  "data": {
+    "user": {...},
+    "authToken": "..."
+  }
+}
+```
+
+**예시 - 실패**:
+```json
+{
+  "status": "INVALID_TOKEN",
+  "message": "유효하지 않은 토큰입니다",
+  "data": null
+}
+```
+
+### HTTP Status Code 정책
+
+**HTTP Status Code는 3가지만 사용**:
+- `400 Bad Request`: 모든 클라이언트 오류 (잘못된 입력, 권한 없음, 리소스 없음 등)
+- `401 Unauthorized`: 인증 필요/실패
+- `5xx Server Error`: 서버 오류
+
+**구체적인 오류는 Response의 status 필드에 영문 대문자로 표기**:
+- `FORBIDDEN`: 권한 없음
+- `NOT_FOUND`: 리소스 없음
+- `INVALID_INPUT`: 잘못된 입력
+- `DUPLICATE_EMAIL`: 중복 이메일
+- 등등
+
+### ENUM 타입 정의 (필수!)
+
+**api-spec.md 파일 최상단에 ENUM 정의 섹션 추가**:
+
+```markdown
+## 📋 ENUM 정의
+
+### MissionType
+
+미션 종류:
+- `taxi`: 택시 미션
+- `payment`: 결제 미션
+- `checkin`: 체크인 미션
+
+### MissionStatus
+
+미션 상태:
+- `InProgress`: 진행 중
+- `Completed`: 완료
+- `Cancelled`: 취소
+```
+
+**정해진 값들은 모두 ENUM으로 표기**:
+- Request 필드 타입: `missionType` → **MissionType** (ENUM)
+- Response 필드 타입: `status` → **MissionStatus** (ENUM)
+
+---
+
 ## 점진적 업데이트 전략
 
 **API 단위로 작성** (한 번에 1개씩):
@@ -178,31 +255,23 @@ Edit(
 
 #### 2-2. Response 모델 작성 (Edit)
 
+**중요**: 반드시 `{status, message, data}` 표준 형식 사용!
+
 ```python
 old_string = """> Response 모델 작성 중..."""
 
 new_string = """### Response (응답)
 
-#### 성공 (200)
+#### 성공 (200 OK)
 
-**반환 정보**:
-
-| 필드명 | 타입 | 설명 | 예시 |
-|--------|------|------|------|
-| status | 문자열 | 상태 코드 | "SUCCESS" |
-| message | 문자열 | 사용자 친화적 메시지 (한글) | "회원가입이 완료됐어요" |
-| data | 객체 | 생성된 사용자 정보 | {...} |
-
-**data 객체**:
-
-| 필드명 | 타입 | 설명 | 예시 |
-|--------|------|------|------|
-| id | 문자열 | 생성된 사용자 식별자 | "user_123abc" |
-| email | 문자열 | 이메일 | "john@example.com" |
-| displayName | 문자열 | 표시 이름 | "TravelLover" |
-| preferredLanguage | 문자열 | 선호 언어 | "en" |
-| profileImage | 문자열 (URL) | 프로필 사진 URL | "https://..." |
-| createdAt | 문자열 (날짜시간) | 가입 시각 | "2026-01-28T10:30:00Z" |
+**표준 형식**:
+\`\`\`json
+{
+  "status": "SUCCESS",
+  "message": "한글 메시지",
+  "data": {...}
+}
+\`\`\`
 
 **예시**:
 \`\`\`json
@@ -222,46 +291,27 @@ new_string = """### Response (응답)
 
 ---
 
-#### 실패 - 이메일 중복 (409)
+#### 실패 (400 Bad Request)
 
-**반환 정보**:
-
-| 필드명 | 타입 | 설명 | 예시 |
-|--------|------|------|------|
-| status | 문자열 | 에러 코드 | "ERROR_EMAIL_ALREADY_EXISTS" |
-| message | 문자열 | 에러 메시지 (한글) | "이미 사용 중인 이메일이에요" |
-| field | 문자열 | 문제가 발생한 필드 | "email" |
-
-**예시**:
+**이메일 중복**:
 \`\`\`json
 {
-  "status": "ERROR_EMAIL_ALREADY_EXISTS",
+  "status": "DUPLICATE_EMAIL",
   "message": "이미 사용 중인 이메일이에요",
-  "field": "email"
+  "data": null
 }
 \`\`\`
 
----
-
-#### 실패 - 유효성 검증 (422)
-
-**예시 1 - 이메일 형식 오류**:
+**잘못된 입력**:
 \`\`\`json
 {
-  "status": "ERROR_INVALID_EMAIL",
+  "status": "INVALID_INPUT",
   "message": "올바른 이메일 형식을 입력해주세요",
-  "field": "email"
+  "data": null
 }
 \`\`\`
 
-**예시 2 - 표시 이름 길이**:
-\`\`\`json
-{
-  "status": "ERROR_DISPLAYNAME_TOO_LONG",
-  "message": "표시 이름은 50자 이하여야 해요",
-  "field": "displayName"
-}
-\`\`\`
+**참고**: HTTP Status Code는 400/401/5xx만 사용. 403, 409, 422 등은 사용하지 않음.
 
 ---
 
@@ -348,31 +398,44 @@ API 2/4 작성 중...
 > 이 API는 복잡한 로직을 포함하므로 수도코드로 설명
 
 \`\`\`
-function 프로필_수정(user_id, 변경_데이터):
+Function 프로필_수정(user_id, 변경_데이터):
     # 1. 권한 확인
-    if 요청자 != user_id:
-        return ERROR_FORBIDDEN
+    If 요청자 != user_id:
+        Return {
+            status: "FORBIDDEN",
+            message: "본인의 프로필만 수정할 수 있습니다",
+            data: null
+        }
 
     # 2. 변경 가능한 필드만 필터링
     허용된_필드 = ["displayName", "profileImage", "preferredLanguage"]
     필터링된_데이터 = filter(변경_데이터, 허용된_필드)
 
     # 3. 유효성 검증
-    for 필드, 값 in 필터링된_데이터:
-        if not validate(필드, 값):
-            return ERROR_VALIDATION_FAILED
+    For 필드, 값 in 필터링된_데이터:
+        If not validate(필드, 값):
+            Return {
+                status: "INVALID_INPUT",
+                message: "유효하지 않은 입력입니다",
+                data: null
+            }
 
     # 4. 데이터 업데이트
     update_user(user_id, 필터링된_데이터)
 
     # 5. 업데이트된 정보 반환
     updated_user = get_user(user_id)
-    return SUCCESS, updated_user
+    Return {
+        status: "SUCCESS",
+        message: "프로필 수정 성공",
+        data: updated_user
+    }
 \`\`\`
 
 **핵심 로직**:
 - 변경 불가능한 필드 (ID, Email, CreatedAt) 자동 제외
 - 권한 검사 (본인만 수정 가능)
+- 모든 Return 문에서 `{status, message, data}` 형식 사용
 ```
 
 ---
@@ -510,30 +573,59 @@ Response: 201 Created
 - 조회만 하는 API
 - 단순 검증만
 
-### 좋은 수도코드 예시
+### 좋은 수도코드 예시 (표준 형식 준수!)
 
 \`\`\`
-function 주문_취소(order_id, user_id):
-    # 1. 권한 확인
+Function 주문_취소(order_id, user_id):
+    # 1. 주문 조회
     order = get_order(order_id)
-    if order.user_id != user_id:
-        return ERROR_FORBIDDEN
+    If order is Null:
+        Return {
+            status: "NOT_FOUND",
+            message: "주문을 찾을 수 없습니다",
+            data: null
+        }
 
-    # 2. 취소 가능 여부 확인
-    if order.status == "배송 완료":
-        return ERROR_CANNOT_CANCEL
+    # 2. 권한 확인
+    If order.user_id != user_id:
+        Return {
+            status: "FORBIDDEN",
+            message: "본인의 주문만 취소할 수 있습니다",
+            data: null
+        }
 
-    if order.created_at < now() - 24시간:
-        return ERROR_CANCEL_PERIOD_EXPIRED
+    # 3. 취소 가능 여부 확인
+    If order.status == OrderStatus.Delivered:
+        Return {
+            status: "CANNOT_CANCEL",
+            message: "배송 완료된 주문은 취소할 수 없습니다",
+            data: null
+        }
 
-    # 3. 상태 전이
-    order.status = "취소됨"
+    If order.created_at < now() - 24시간:
+        Return {
+            status: "CANCEL_PERIOD_EXPIRED",
+            message: "취소 가능 기간이 지났습니다",
+            data: null
+        }
+
+    # 4. 상태 전이
+    order.status = OrderStatus.Cancelled
     order.canceled_at = now()
 
-    # 4. 환불 처리 (결제 완료인 경우만)
-    if order.payment_status == "결제 완료":
+    # 5. 환불 처리 (결제 완료인 경우만)
+    If order.payment_status == PaymentStatus.Completed:
         process_refund(order.payment_id)
 
-    # 5. 성공 응답
-    return SUCCESS, order
+    # 6. 성공 응답
+    Return {
+        status: "SUCCESS",
+        message: "주문이 취소되었습니다",
+        data: order
+    }
 \`\`\`
+
+**중요**:
+- 모든 Return 문에서 `{status, message, data}` 형식 사용
+- ENUM 값 사용 (OrderStatus.Cancelled, PaymentStatus.Completed 등)
+- status 필드에 구체적인 오류 코드 (영문 대문자)
