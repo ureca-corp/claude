@@ -1,0 +1,24 @@
+{
+  "name": "ureca-plugins",
+  "owner": {
+    "name": "URECA Team"
+  },
+  "metadata": {
+    "description": "도메인 주도 설계 및 AI 기반 개발 도구 모음",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "domain-book-builder",
+      "source": "./plugins/domain-book-builder",
+      "description": "기술 독립적 Domain Book 생성 - 완벽한 도메인 설계서 집필",
+      "version": "1.0.0",
+      "author": {
+        "name": "URECA Team"
+      },
+      "keywords": ["domain-driven-design", "product-planning", "ubiquitous-language"],
+      "category": "planning"
+    }
+  ]
+}
