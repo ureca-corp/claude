@@ -4,6 +4,9 @@
 .LSOverride
 
 # Claude Code
+.claude/*.local.md
+.claude/cache/
+.claude-plugin/cache/
 
 # IDE
 .vscode/
