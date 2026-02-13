@@ -331,6 +331,17 @@ check_links() {
                 continue
             fi
 
+            # Skip template links (output files that will be generated)
+            if [[ $md_file == */templates/* ]] || [[ $md_file == */agents/* ]]; then
+                if [[ $link == ./features.md ]] || \
+                   [[ $link == ./domain-model.md ]] || \
+                   [[ $link == ./api-spec.md ]] || \
+                   [[ $link == ./business-rules.md ]] || \
+                   [[ $link == ./README.md ]]; then
+                    continue
+                fi
+            fi
+
             # Resolve relative path
             local dir=$(dirname "$md_file")
             local resolved_path="$dir/$link"

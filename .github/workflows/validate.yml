@@ -219,9 +219,10 @@ jobs:
                   exit 1
                 fi
 
-                # Check for required frontmatter fields
-                if ! grep -A 20 "^---$" "$agent" | grep -q "identifier:"; then
-                  echo "❌ Missing 'identifier' in frontmatter: $agent"
+                # Check for required frontmatter fields (either 'identifier' or 'name')
+                FRONTMATTER=$(sed -n '/^---$/,/^---$/p' "$agent")
+                if ! echo "$FRONTMATTER" | grep -qE "(identifier:|name:)"; then
+                  echo "❌ Missing 'identifier' or 'name' in frontmatter: $agent"
                   exit 1
                 fi
               done
@@ -286,6 +287,17 @@ jobs:
               # Skip anchor links
               if [[ $link == \#* ]]; then
                 continue
+              fi
+
+              # Skip template links (output files that will be generated)
+              if [[ $md_file == */templates/* ]] || [[ $md_file == */agents/* ]]; then
+                if [[ $link == ./features.md ]] || \
+                   [[ $link == ./domain-model.md ]] || \
+                   [[ $link == ./api-spec.md ]] || \
+                   [[ $link == ./business-rules.md ]] || \
+                   [[ $link == ./README.md ]]; then
+                  continue
+                fi
               fi
 
               # Resolve relative path
