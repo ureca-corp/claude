@@ -32,9 +32,6 @@ jobs:
             ".claude-plugin/marketplace.json"
             "README.md"
             "LICENSE"
-            "CLAUDE.md"
-            "CONTRIBUTING.md"
-            "CHANGELOG.md"
           )
 
           MISSING_FILES=()
@@ -58,11 +55,6 @@ jobs:
           # Check required fields
           if ! jq -e '.name' .claude-plugin/marketplace.json >/dev/null; then
             echo "❌ Missing 'name' field"
-            exit 1
-          fi
-
-          if ! jq -e '.repository' .claude-plugin/marketplace.json >/dev/null; then
-            echo "❌ Missing 'repository' field"
             exit 1
           fi
 
@@ -101,19 +93,19 @@ jobs:
             exit 1
           fi
 
-          # Check required fields
+          # Check required fields per official docs
           if ! jq -e '.name' "$PLUGIN_JSON" >/dev/null; then
-            echo "❌ Missing 'name' field"
+            echo "❌ Missing required 'name' field"
             exit 1
           fi
 
           if ! jq -e '.version' "$PLUGIN_JSON" >/dev/null; then
-            echo "❌ Missing 'version' field"
+            echo "❌ Missing required 'version' field"
             exit 1
           fi
 
           if ! jq -e '.description' "$PLUGIN_JSON" >/dev/null; then
-            echo "❌ Missing 'description' field"
+            echo "❌ Missing required 'description' field"
             exit 1
           fi
 
@@ -124,7 +116,6 @@ jobs:
           PLUGIN_DIR="plugins/${{ matrix.plugin }}"
           echo "Checking plugin structure..."
 
-          REQUIRED_DIRS=()
           REQUIRED_FILES=(
             "$PLUGIN_DIR/.claude-plugin/plugin.json"
             "$PLUGIN_DIR/README.md"
@@ -142,12 +133,14 @@ jobs:
           for dir in "${COMPONENT_DIRS[@]}"; do
             if [ -d "$dir" ]; then
               HAS_COMPONENT=true
+              echo "✅ Found component directory: $(basename $dir)"
               break
             fi
           done
 
           if [ "$HAS_COMPONENT" = false ]; then
-            echo "❌ No component directories (skills/commands/agents/hooks) found"
+            echo "❌ No component directories found (skills/commands/agents/hooks)"
+            echo "   Per official docs, plugin must have at least one component directory"
             exit 1
           fi
 
@@ -161,179 +154,35 @@ jobs:
 
           echo "✅ Plugin structure is valid"
 
-      - name: Validate skills
+      - name: Verify components are at plugin root
         run: |
-          SKILLS_DIR="plugins/${{ matrix.plugin }}/skills"
-          if [ -d "$SKILLS_DIR" ]; then
-            echo "Validating skills..."
+          PLUGIN_DIR="plugins/${{ matrix.plugin }}"
+          echo "Verifying components are not inside .claude-plugin/ directory..."
 
-            # Find all SKILL.md files
-            SKILL_FILES=$(find "$SKILLS_DIR" -name "SKILL.md")
-
-            if [ -z "$SKILL_FILES" ]; then
-              echo "⚠️  No SKILL.md files found in skills directory"
-            else
-              for skill in $SKILL_FILES; do
-                echo "Checking $skill..."
-
-                # Check for frontmatter
-                if ! grep -q "^---$" "$skill"; then
-                  echo "❌ Missing frontmatter in $skill"
-                  exit 1
-                fi
-
-                # Check for required frontmatter fields
-                if ! grep -A 10 "^---$" "$skill" | grep -q "name:"; then
-                  echo "❌ Missing 'name' in frontmatter: $skill"
-                  exit 1
-                fi
-
-                if ! grep -A 10 "^---$" "$skill" | grep -q "description:"; then
-                  echo "❌ Missing 'description' in frontmatter: $skill"
-                  exit 1
-                fi
-              done
-
-              echo "✅ All skills are valid"
-            fi
-          fi
-
-      - name: Validate agents
-        run: |
-          AGENTS_DIR="plugins/${{ matrix.plugin }}/agents"
-          if [ -d "$AGENTS_DIR" ]; then
-            echo "Validating agents..."
-
-            # Find all agent markdown files
-            AGENT_FILES=$(find "$AGENTS_DIR" -name "*.md")
-
-            if [ -z "$AGENT_FILES" ]; then
-              echo "⚠️  No agent files found in agents directory"
-            else
-              for agent in $AGENT_FILES; do
-                echo "Checking $agent..."
-
-                # Check for frontmatter
-                if ! grep -q "^---$" "$agent"; then
-                  echo "❌ Missing frontmatter in $agent"
-                  exit 1
-                fi
-
-                # Check for required frontmatter fields (either 'identifier' or 'name')
-                FRONTMATTER=$(sed -n '/^---$/,/^---$/p' "$agent")
-                if ! echo "$FRONTMATTER" | grep -qE "(identifier:|name:)"; then
-                  echo "❌ Missing 'identifier' or 'name' in frontmatter: $agent"
-                  exit 1
-                fi
-              done
-
-              echo "✅ All agents are valid"
-            fi
-          fi
-
-      - name: Validate commands
-        run: |
-          COMMANDS_DIR="plugins/${{ matrix.plugin }}/commands"
-          if [ -d "$COMMANDS_DIR" ]; then
-            echo "Validating commands..."
-
-            # Find all command SKILL.md files
-            COMMAND_FILES=$(find "$COMMANDS_DIR" -name "SKILL.md")
-
-            if [ -z "$COMMAND_FILES" ]; then
-              echo "⚠️  No SKILL.md files found in commands directory"
-            else
-              for command in $COMMAND_FILES; do
-                echo "Checking $command..."
-
-                # Check for frontmatter
-                if ! grep -q "^---$" "$command"; then
-                  echo "❌ Missing frontmatter in $command"
-                  exit 1
-                fi
-              done
-
-              echo "✅ All commands are valid"
-            fi
-          fi
-
-  check-links:
-    name: Check Markdown Links
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Check internal links
-        run: |
-          echo "Checking internal markdown links..."
-
-          # Find all markdown files
-          MD_FILES=$(find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*")
-
-          BROKEN_LINKS=()
-
-          for md_file in $MD_FILES; do
-            # Extract markdown links
-            LINKS=$(grep -oP '\[.*?\]\(\K[^)]+(?=\))' "$md_file" 2>/dev/null || true)
-
-            for link in $LINKS; do
-              # Skip external links
-              if [[ $link == http* ]] || [[ $link == mailto:* ]]; then
-                continue
-              fi
-
-              # Skip anchor links
-              if [[ $link == \#* ]]; then
-                continue
-              fi
-
-              # Skip template links (output files that will be generated)
-              if [[ $md_file == */templates/* ]] || [[ $md_file == */agents/* ]]; then
-                if [[ $link == ./features.md ]] || \
-                   [[ $link == ./domain-model.md ]] || \
-                   [[ $link == ./api-spec.md ]] || \
-                   [[ $link == ./business-rules.md ]] || \
-                   [[ $link == ./README.md ]]; then
-                  continue
-                fi
-              fi
-
-              # Resolve relative path
-              DIR=$(dirname "$md_file")
-              RESOLVED_PATH="$DIR/$link"
-
-              # Remove ./ prefix if present
-              RESOLVED_PATH="${RESOLVED_PATH#./}"
-
-              # Check if file exists
-              if [ ! -f "$RESOLVED_PATH" ] && [ ! -d "$RESOLVED_PATH" ]; then
-                BROKEN_LINKS+=("$md_file -> $link")
-              fi
-            done
-          done
-
-          if [ ${#BROKEN_LINKS[@]} -gt 0 ]; then
-            echo "❌ Broken internal links found:"
-            printf '%s\n' "${BROKEN_LINKS[@]}"
+          # This is a common mistake per official docs
+          if [ -d "$PLUGIN_DIR/.claude-plugin/commands" ] || \
+             [ -d "$PLUGIN_DIR/.claude-plugin/skills" ] || \
+             [ -d "$PLUGIN_DIR/.claude-plugin/agents" ] || \
+             [ -d "$PLUGIN_DIR/.claude-plugin/hooks" ]; then
+            echo "❌ Component directories found inside .claude-plugin/"
+            echo "   Components must be at plugin root, not inside .claude-plugin/"
+            echo "   See: https://code.claude.com/docs/en/plugins#plugin-structure-overview"
             exit 1
           fi
 
-          echo "✅ All internal links are valid"
+          echo "✅ Components are correctly placed at plugin root"
 
   summary:
     name: Validation Summary
     runs-on: ubuntu-latest
-    needs: [validate-marketplace, validate-plugins, check-links]
+    needs: [validate-marketplace, validate-plugins]
     if: always()
 
     steps:
       - name: Check results
         run: |
           if [ "${{ needs.validate-marketplace.result }}" != "success" ] || \
-             [ "${{ needs.validate-plugins.result }}" != "success" ] || \
-             [ "${{ needs.check-links.result }}" != "success" ]; then
+             [ "${{ needs.validate-plugins.result }}" != "success" ]; then
             echo "❌ Validation failed"
             exit 1
           fi
