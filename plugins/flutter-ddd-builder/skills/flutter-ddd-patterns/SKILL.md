@@ -41,20 +41,24 @@ lib/apps/
 │   ├── pages/
 │   │   └── {page}/
 │   │       ├── {page}_page.dart
-│   │       └── {page}_provider.dart
+│   │       └── providers/
+│   │           └── {feature}_provider.dart
 │   └── components/           # Domain-specific widgets
 ├── infra/
 │   ├── common/client/dio_provider.dart
-│   └── http/generated/              # swagger_parser output
-│       ├── rest_client.dart
-│       └── *.dart (models, requests, responses)
-└── ui/
-    └── router/
-        ├── app_router.dart      # barrel export
-        ├── client.dart          # RouterClient (const instances)
-        ├── routes.dart          # GoRouter goRouterConfig
-        └── domains/
-            └── {domain}.dart    # Route classes
+│   └── exception/
+├── ui/
+│   └── router/
+│       ├── app_router.dart      # barrel export
+│       ├── client.dart          # RouterClient (const instances)
+│       ├── routes.dart          # GoRouter goRouterConfig
+│       └── domains/
+│           └── {domain}.dart    # Route classes
+├── generated/api/               # swagger_parser output (수동 편집 금지)
+│   ├── rest_client.dart
+│   ├── clients/
+│   └── models/
+└── global/                      # constants, utils, hooks, types
 ```
 
 ### Code Generation Workflow
@@ -252,7 +256,7 @@ The project uses `dioProvider` for all API calls. Providers call Dio directly wi
 ```yaml
 swagger_parser:
   schema_path: swagger/api_spec.json
-  output_directory: lib/apps/infra/http/generated
+  output_directory: lib/generated/api
   use_freezed3: true
   client_postfix: Client
   root_client: true
@@ -261,7 +265,7 @@ swagger_parser:
 
 **Generated structure:**
 ```
-lib/apps/infra/http/generated/
+lib/generated/api/
 ├── rest_client.dart          # Main client
 ├── auth/
 │   ├── login_request_model.dart
@@ -457,7 +461,7 @@ dart run build_runner build --delete-conflicting-outputs  # Freezed + Riverpod
 **API client not found:**
 - Ensure `swagger/api_spec.json` exists
 - Run `dart run swagger_parser`
-- Check `lib/apps/infra/http/generated/rest_client.dart`
+- Check `lib/generated/api/rest_client.dart`
 
 **AsyncValue errors:**
 - Use `AsyncValue.guard` for all async operations
