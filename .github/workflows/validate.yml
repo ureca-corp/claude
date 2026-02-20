@@ -1,0 +1,190 @@
+name: Validate Plugins
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  validate-marketplace:
+    name: Validate Marketplace Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate JSON syntax
+        run: |
+          echo "Validating marketplace.json..."
+          if ! jq empty .claude-plugin/marketplace.json 2>/dev/null; then
+            echo "❌ Invalid JSON in marketplace.json"
+            exit 1
+          fi
+          echo "✅ marketplace.json is valid JSON"
+
+      - name: Check required files
+        run: |
+          echo "Checking required marketplace files..."
+          REQUIRED_FILES=(
+            ".claude-plugin/marketplace.json"
+            "README.md"
+            "LICENSE"
+          )
+
+          MISSING_FILES=()
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              MISSING_FILES+=("$file")
+            fi
+          done
+
+          if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+            echo "❌ Missing required files:"
+            printf '%s\n' "${MISSING_FILES[@]}"
+            exit 1
+          fi
+          echo "✅ All required marketplace files present"
+
+      - name: Validate marketplace metadata
+        run: |
+          echo "Validating marketplace metadata..."
+
+          # Check required fields
+          if ! jq -e '.name' .claude-plugin/marketplace.json >/dev/null; then
+            echo "❌ Missing 'name' field"
+            exit 1
+          fi
+
+          if ! jq -e '.plugins' .claude-plugin/marketplace.json >/dev/null; then
+            echo "❌ Missing 'plugins' array"
+            exit 1
+          fi
+
+          echo "✅ Marketplace metadata is valid"
+
+  validate-plugins:
+    name: Validate Plugin Structure
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        plugin:
+          - domain-book-builder
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate plugin.json
+        run: |
+          PLUGIN_JSON="plugins/${{ matrix.plugin }}/.claude-plugin/plugin.json"
+          echo "Validating $PLUGIN_JSON..."
+
+          if [ ! -f "$PLUGIN_JSON" ]; then
+            echo "❌ plugin.json not found"
+            exit 1
+          fi
+
+          if ! jq empty "$PLUGIN_JSON" 2>/dev/null; then
+            echo "❌ Invalid JSON in plugin.json"
+            exit 1
+          fi
+
+          # Check required fields per official docs
+          if ! jq -e '.name' "$PLUGIN_JSON" >/dev/null; then
+            echo "❌ Missing required 'name' field"
+            exit 1
+          fi
+
+          if ! jq -e '.version' "$PLUGIN_JSON" >/dev/null; then
+            echo "❌ Missing required 'version' field"
+            exit 1
+          fi
+
+          if ! jq -e '.description' "$PLUGIN_JSON" >/dev/null; then
+            echo "❌ Missing required 'description' field"
+            exit 1
+          fi
+
+          echo "✅ plugin.json is valid"
+
+      - name: Check plugin structure
+        run: |
+          PLUGIN_DIR="plugins/${{ matrix.plugin }}"
+          echo "Checking plugin structure..."
+
+          REQUIRED_FILES=(
+            "$PLUGIN_DIR/.claude-plugin/plugin.json"
+            "$PLUGIN_DIR/README.md"
+          )
+
+          # Check if at least one component directory exists
+          COMPONENT_DIRS=(
+            "$PLUGIN_DIR/skills"
+            "$PLUGIN_DIR/commands"
+            "$PLUGIN_DIR/agents"
+            "$PLUGIN_DIR/hooks"
+          )
+
+          HAS_COMPONENT=false
+          for dir in "${COMPONENT_DIRS[@]}"; do
+            if [ -d "$dir" ]; then
+              HAS_COMPONENT=true
+              echo "✅ Found component directory: $(basename $dir)"
+              break
+            fi
+          done
+
+          if [ "$HAS_COMPONENT" = false ]; then
+            echo "❌ No component directories found (skills/commands/agents/hooks)"
+            echo "   Per official docs, plugin must have at least one component directory"
+            exit 1
+          fi
+
+          # Check required files
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+
+          echo "✅ Plugin structure is valid"
+
+      - name: Verify components are at plugin root
+        run: |
+          PLUGIN_DIR="plugins/${{ matrix.plugin }}"
+          echo "Verifying components are not inside .claude-plugin/ directory..."
+
+          # This is a common mistake per official docs
+          if [ -d "$PLUGIN_DIR/.claude-plugin/commands" ] || \
+             [ -d "$PLUGIN_DIR/.claude-plugin/skills" ] || \
+             [ -d "$PLUGIN_DIR/.claude-plugin/agents" ] || \
+             [ -d "$PLUGIN_DIR/.claude-plugin/hooks" ]; then
+            echo "❌ Component directories found inside .claude-plugin/"
+            echo "   Components must be at plugin root, not inside .claude-plugin/"
+            echo "   See: https://code.claude.com/docs/en/plugins#plugin-structure-overview"
+            exit 1
+          fi
+
+          echo "✅ Components are correctly placed at plugin root"
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-marketplace, validate-plugins]
+    if: always()
+
+    steps:
+      - name: Check results
+        run: |
+          if [ "${{ needs.validate-marketplace.result }}" != "success" ] || \
+             [ "${{ needs.validate-plugins.result }}" != "success" ]; then
+            echo "❌ Validation failed"
+            exit 1
+          fi
+
+          echo "✅ All validations passed!"

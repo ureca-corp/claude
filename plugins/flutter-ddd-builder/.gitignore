@@ -1,0 +1,18 @@
+# User settings (should not be committed)
+.claude/*.local.md
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node modules (if MCP servers added)
+node_modules/
+package-lock.json
+
+# Logs
+*.log

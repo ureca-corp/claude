@@ -1,0 +1,184 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_REF: ${{ github.ref }}
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_NUMBER="${{ steps.version.outputs.version_number }}"
+
+          # Extract changelog for this version
+          if [ -f CHANGELOG.md ]; then
+            # Extract section between version headers
+            CHANGELOG=$(sed -n "/## \[$VERSION_NUMBER\]/,/## \[/p" CHANGELOG.md | sed '$d')
+
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="Release $VERSION"
+            fi
+          else
+            CHANGELOG="Release $VERSION"
+          fi
+
+          # Save to file for multiline handling
+          echo "$CHANGELOG" > /tmp/changelog.txt
+          echo "changelog_file=/tmp/changelog.txt" >> $GITHUB_OUTPUT
+
+      - name: Validate release
+        run: |
+          VERSION_NUMBER="${{ steps.version.outputs.version_number }}"
+
+          # Check if version exists in marketplace.json
+          MARKETPLACE_VERSION=$(jq -r '.metadata.version' .claude-plugin/marketplace.json)
+
+          if [ "$MARKETPLACE_VERSION" != "$VERSION_NUMBER" ]; then
+            echo "⚠️  Warning: marketplace.json version ($MARKETPLACE_VERSION) doesn't match release version ($VERSION_NUMBER)"
+          fi
+
+          # Check if CHANGELOG has entry for this version
+          if ! grep -q "## \[$VERSION_NUMBER\]" CHANGELOG.md; then
+            echo "❌ No CHANGELOG entry found for version $VERSION_NUMBER"
+            exit 1
+          fi
+
+          echo "✅ Release validation passed"
+
+      - name: Create release notes
+        id: notes
+        run: |
+          CHANGELOG=$(cat /tmp/changelog.txt)
+
+          # Add installation instructions
+          cat > /tmp/release_notes.md << 'EOF'
+          ## 🚀 Installation
+
+          Add the marketplace to Claude Code:
+
+          ```bash
+          /plugin marketplace add https://github.com/ureca-corp/claude
+          ```
+
+          Install plugins from this marketplace:
+
+          ```bash
+          /plugin install domain-book-builder@ureca-plugins
+          ```
+
+          ## 📝 Changes
+
+          EOF
+
+          echo "$CHANGELOG" >> /tmp/release_notes.md
+
+          cat >> /tmp/release_notes.md << 'EOF'
+
+          ---
+
+          ## 📚 Documentation
+
+          - [Installation Guide](https://github.com/ureca-corp/claude/blob/main/docs/installation.md)
+          - [Plugin Development](https://github.com/ureca-corp/claude/blob/main/docs/plugin-development.md)
+          - [Contributing](https://github.com/ureca-corp/claude/blob/main/CONTRIBUTING.md)
+
+          ## 🔗 Links
+
+          - [Full Changelog](https://github.com/ureca-corp/claude/blob/main/CHANGELOG.md)
+          - [Issues](https://github.com/ureca-corp/claude/issues)
+          - [Discussions](https://github.com/ureca-corp/claude/discussions)
+          EOF
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body_path: /tmp/release_notes.md
+          draft: false
+          prerelease: false
+
+      - name: Notify success
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "✅ Successfully created release $VERSION"
+          echo "🔗 https://github.com/ureca-corp/claude/releases/tag/$VERSION"
+
+  update-marketplace-version:
+    name: Update Marketplace Version
+    runs-on: ubuntu-latest
+    needs: create-release
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_REF: ${{ github.ref }}
+
+      - name: Update marketplace.json
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Update version in marketplace.json
+          jq ".metadata.version = \"$VERSION\"" .claude-plugin/marketplace.json > /tmp/marketplace.json
+          mv /tmp/marketplace.json .claude-plugin/marketplace.json
+
+          echo "✅ Updated marketplace.json to version $VERSION"
+
+      - name: Commit and push
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .claude-plugin/marketplace.json
+          git commit -m "chore: bump marketplace version to $VERSION [skip ci]" || exit 0
+          git push origin HEAD:main

@@ -1,12 +1,23 @@
 {
   "name": "ureca-plugins",
+  "repository": "https://github.com/ureca-corp/claude",
+  "homepage": "https://github.com/ureca-corp/claude",
   "owner": {
-    "name": "URECA Team"
+    "name": "URECA Team",
+    "url": "https://github.com/ureca-corp"
   },
   "metadata": {
     "description": "도메인 주도 설계 및 AI 기반 개발 도구 모음",
     "version": "1.0.0",
-    "pluginRoot": "./plugins"
+    "pluginRoot": "./plugins",
+    "license": "MIT",
+    "keywords": [
+      "domain-driven-design",
+      "ddd",
+      "product-planning",
+      "documentation",
+      "ai-assisted"
+    ]
   },
   "plugins": [
     {
@@ -15,9 +26,14 @@
       "description": "기술 독립적 Domain Book 생성 - 완벽한 도메인 설계서 집필",
       "version": "1.0.0",
       "author": {
-        "name": "URECA Team"
+        "name": "URECA Team",
+        "url": "https://github.com/ureca-corp"
       },
-      "keywords": ["domain-driven-design", "product-planning", "ubiquitous-language"],
+      "keywords": [
+        "domain-driven-design",
+        "product-planning",
+        "ubiquitous-language"
+      ],
       "category": "planning"
     },
     {
@@ -26,10 +42,33 @@
       "description": "Domain Book 기반 FastAPI 프로젝트 자동 생성 - 병렬 코드 생성 및 품질 보증",
       "version": "1.0.0",
       "author": {
-        "name": "URECA Team"
+        "name": "URECA Team",
+        "url": "https://github.com/ureca-corp"
       },
-      "keywords": ["fastapi", "backend", "code-generation", "domain-driven-design", "clean-architecture"],
+      "keywords": [
+        "fastapi",
+        "backend",
+        "code-generation",
+        "domain-driven-design",
+        "clean-architecture"
+      ],
       "category": "backend"
+    },
+    {
+      "name": "flutter-ddd-builder",
+      "source": "./plugins/flutter-ddd-builder",
+      "description": "Flutter DDD 프로젝트 생성",
+      "version": "1.0.0",
+      "author": {
+        "name": "URECA Team",
+        "url": "https://github.com/ureca-corp"
+      },
+      "keywords": [
+        "flutter",
+        "ddd",
+        "builder"
+      ],
+      "category": "development"
     }
   ]
 }

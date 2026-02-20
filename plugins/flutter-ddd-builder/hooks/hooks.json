@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If you just modified a Dart file in lib/ or test/ directory (lib/**/*.dart or test/**/*.dart), run 'flutter analyze' to check for errors. If errors exist, fix them immediately (maximum 3 retry attempts). All errors and warnings must be addressed before proceeding, unless the user has configured specific ignore rules in .claude/flutter-ddd-builder.local.md. After 3 failed attempts, report the issue to the user."
+          }
+        ]
+      }
+    ]
+  }
+}

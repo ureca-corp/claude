@@ -3,55 +3,11 @@
   "description": "기술 독립적 Domain Book 생성 - 완벽한 도메인 설계서 집필",
   "version": "1.0.0",
   "author": {
-    "name": "ureca"
+    "name": "URECA Team"
   },
-  "tags": [
+  "keywords": [
     "domain-driven-design",
     "product-planning",
     "ubiquitous-language"
-  ],
-  "workflow": "sequential-with-approval",
-  "phases": [
-    {
-      "id": 1,
-      "name": "Clarifier",
-      "agent": "1-clarifier",
-      "approval_required": true,
-      "output": ".claude/SESSION.md",
-      "incremental_updates": true
-    },
-    {
-      "id": 2,
-      "name": "Interviewer",
-      "agent": "2-interviewer",
-      "approval_required": true,
-      "output": ".claude/SESSION.md (updated)",
-      "incremental_updates": true
-    },
-    {
-      "id": 3,
-      "name": "Domain Modeler",
-      "agent": "3-domain-modeler",
-      "approval_required": true,
-      "output": "ai-context/domain-books/{domain}/domain-model.md",
-      "incremental_updates": true
-    },
-    {
-      "id": 4,
-      "name": "API Designer",
-      "agent": "4-api-designer",
-      "approval_required": true,
-      "output": "ai-context/domain-books/{domain}/api-spec.md",
-      "incremental_updates": true
-    },
-    {
-      "id": 5,
-      "name": "Book Writer",
-      "agent": "5-book-writer",
-      "approval_required": false,
-      "output": "ai-context/domain-books/{domain}/*",
-      "parallel": true,
-      "dependency_resolution": "topological-sort"
-    }
   ]
 }
