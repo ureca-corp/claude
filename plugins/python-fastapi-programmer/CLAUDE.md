@@ -118,9 +118,17 @@ git merge feature/community  # users 의존 → 나중 머지
 │   │       ├── router.py
 │   │       └── README.md
 │   ├── core/
+│   │   ├── config.py         # 환경 변수 로드
 │   │   ├── database.py       # DB 연결
-│   │   ├── security.py       # JWT 인증
-│   │   └── config.py         # 환경 변수 로드
+│   │   ├── models.py         # BaseModel (TimestampMixin + SoftDeleteMixin)
+│   │   ├── response.py       # ApiResponse[T] + Status enum
+│   │   ├── exceptions.py     # AppError 계열 예외
+│   │   ├── pagination.py     # OffsetPage[T], CursorPage[T]
+│   │   ├── sorting.py        # parse_sort, SortField
+│   │   ├── logger.py         # structlog 로거
+│   │   ├── masking.py        # 민감 정보 마스킹
+│   │   ├── middleware.py      # Pure ASGI 미들웨어
+│   │   └── utils.py          # EnvironmentHelper
 │   └── main.py               # FastAPI 앱 엔트리포인트
 ├── tests/
 │   ├── test_users.py         # E2E 테스트
@@ -153,10 +161,10 @@ git merge feature/community  # users 의존 → 나중 머지
 
 ### plugin.json 수정
 
-- `workflow`: "sequential-with-approval" 고정
-- Phase 1-5는 `approval_required: true`
-- Phase 6만 `approval_required: false` (자동 실행)
-- Phase 4는 `parallel: true` + `team_based: true` (병렬 개발)
+- `name`, `description`, `version`, `author`, `keywords` 필드만 포함
+- Phase 순서는 에이전트 간 Task 호출 체인으로 제어 (Phase 1 → 3 → 4 → 5 → 6)
+- Phase 2는 선택적 (기본: Phase 1 → Phase 3 직접 호출)
+- Phase 4는 TeamCreate + Git Worktree로 병렬 개발
 
 ## 아키텍처 원칙
 

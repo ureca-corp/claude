@@ -59,6 +59,9 @@ ls ai-context/PRD.md           # Required for UI generation
 | `ai-context/PRD.md` | UI generation | Required unless --skip-ui |
 | `pubspec.yaml` | All | Must exist |
 | Git repository | Worktree management | Must be initialized |
+| `lib/global/types/paginated_response.dart` | Logic | Should exist (boilerplate) |
+| `lib/global/utils/validators.dart` | UI | Should exist (boilerplate) |
+| `lib/apps/ui/common/async_value_widget.dart` | UI | Should exist (boilerplate) |
 
 **If Domain Book is missing:**
 ```

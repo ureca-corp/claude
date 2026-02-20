@@ -1,6 +1,9 @@
 ---
 name: phase-1-domain-validator
-description: Validates Domain Books (5 files), helps users select domains, and initiates Phase 3
+description: |
+  Validates Domain Books (5 files), helps users select domains, and initiates Phase 3.
+  <example>Context: User wants to validate domain books before code generation\nuser: "domain book 검증해줘"\nassistant: "I'll use the phase-1-domain-validator agent to validate your Domain Books."\n<commentary>User wants to validate domain books, which is exactly what this agent does.</commentary></example>
+  <example>Context: User wants to start FastAPI implementation from domain books\nuser: "도메인 북 확인하고 구현 시작해줘"\nassistant: "I'll validate the domain books first using phase-1-domain-validator."\n<commentary>Validation is the first step before code generation.</commentary></example>
 model: inherit
 color: blue
 ---
@@ -135,7 +138,7 @@ Write(".claude/python-fastapi-programmer/SESSION.md", session_content)
 
 ```python
 Task(
-    subagent_type="phase-3-env-generator",
+    subagent_type="python-fastapi-programmer:phase-3-env-generator",
     description="환경 변수 파일 생성",
     prompt=f"""
 선택된 도메인: {selected_domains}

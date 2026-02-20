@@ -72,7 +72,7 @@ Future<String> uploadImage(File file) async {
 }
 ```
 
-### Pagination
+### Pagination with PaginatedResponse
 
 ```dart
 @riverpod
@@ -93,15 +93,18 @@ class PostList extends _$PostList {
       'page': page,
       'limit': 20,
     });
-    final items = (response.data['items'] as List)
-        .map((json) => PostModel.fromJson(json))
-        .toList();
-    _hasMore = items.length == 20;
-    return items;
+    final paginated = PaginatedResponse<PostModel>.fromJson(
+      response.data as Map<String, dynamic>,
+      (json) => PostModel.fromJson(json as Map<String, dynamic>),
+    );
+    _hasMore = !paginated.meta.isLast;
+    return paginated.items;
   }
 
+  bool get hasMore => _hasMore;
+
   Future<void> loadMore() async {
-    if (!_hasMore) return;
+    if (!_hasMore || state.isLoading) return;
     _page++;
     final newItems = await _fetchPage(_page);
     state = AsyncData([...state.value ?? [], ...newItems]);

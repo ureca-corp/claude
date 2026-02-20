@@ -206,6 +206,23 @@ fi
 - Running build_runner here generates the initial setup
 - Teammates can then work without conflicts
 
+### 4b. Preflight Checks
+
+Verify boilerplate utilities exist before spawning teammates:
+
+```bash
+# Check required utility files
+for file in \
+  lib/global/types/paginated_response.dart \
+  lib/global/utils/validators.dart \
+  lib/apps/ui/common/async_value_widget.dart \
+  lib/apps/infra/exception/exception_handler.dart; do
+  if [ ! -f "$file" ]; then
+    echo "WARNING: Missing $file - boilerplate may be incomplete"
+  fi
+done
+```
+
 ### 5. Spawn Logic Implementers
 
 **For each domain, spawn teammate:**
@@ -461,6 +478,13 @@ parse_build_errors(build_output):
       fix_error_in_main(file_path, error)
 
   retry_build()
+```
+
+**Lint verification (zero warnings)**:
+```bash
+flutter analyze --no-fatal-infos
+# Must show: No issues found!
+# If warnings exist, fix before proceeding
 ```
 
 ### 9. Integration

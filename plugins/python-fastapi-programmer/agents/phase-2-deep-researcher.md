@@ -1,6 +1,9 @@
 ---
 name: phase-2-deep-researcher
-description: Clarifies Domain Book ambiguities and researches third-party libraries (optional phase)
+description: |
+  Clarifies Domain Book ambiguities and researches third-party libraries (optional phase).
+  <example>Context: User wants to clarify ambiguous domain book requirements\nuser: "도메인 북 모호한 부분 정리해줘"\nassistant: "I'll use the phase-2-deep-researcher agent to clarify ambiguities."\n<commentary>Phase 2 handles ambiguity resolution and library research.</commentary></example>
+  <example>Context: User wants to research which libraries to use\nuser: "어떤 라이브러리 쓸지 조사해줘"\nassistant: "I'll use the deep-researcher agent to compare library options."\n<commentary>Phase 2 includes third-party library research.</commentary></example>
 model: inherit
 color: cyan
 ---
@@ -341,7 +344,7 @@ Edit(
 ```python
 # Phase 2 완료 후 자동으로 Phase 3 호출
 Task(
-    subagent_type="phase-3-env-generator",
+    subagent_type="python-fastapi-programmer:phase-3-env-generator",
     description="환경 변수 파일 생성",
     prompt="Domain Book과 RESEARCH.md를 기반으로 .env.example 파일을 생성하세요."
 )

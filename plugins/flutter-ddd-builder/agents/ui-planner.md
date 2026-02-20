@@ -193,6 +193,17 @@ Follow project conventions:
 - Theme.of(context).textTheme for text
 - No hardcoded values
 
+**Theme (Dual Mode)**:
+- If project uses token mode: `AppColors.primary500`, `AppSpacing.spacing4`
+- If project uses seed mode: `cs.primary`, hardcoded spacing (16.0)
+- Widget Mapping should note: `cs.primary` works in both modes
+- ASCII wireframes should not hardcode colors, only reference token names or cs
+
+**Pagination Lists**:
+- Mark infinite scroll lists with `[∞ Scroll]` indicator
+- Show `PostListProvider.loadMore()` service mapping
+- Include loading indicator at bottom of list
+
 **Page Location**:
 - Pages are at `lib/apps/domain/{domain}/pages/{page}/{page}_page.dart`
 - Not at `lib/apps/ui/pages/`

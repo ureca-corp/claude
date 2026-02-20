@@ -52,6 +52,35 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY required")
 
-# ❌ Never do this  
+# ❌ Never do this
 SECRET_KEY = "hardcoded_secret_123"
+```
+
+### 5. Sensitive Data Masking
+
+**Always** mask sensitive data in logs:
+```python
+from src.core.masking import mask_dict, mask_value
+
+# ✅ Correct - 로그 출력 시 마스킹
+logger.info("request", data=mask_dict({"password": "secret", "name": "John"}))
+# → {"password": "se***et", "name": "John"}
+
+# ❌ Never do this
+logger.info("request", data={"password": "secret"})
+```
+
+### 6. Exception Handling
+
+**Always** use AppError subclasses:
+```python
+from src.core.exceptions import NotFoundError, ConflictError, UnauthorizedError
+
+# ✅ Correct - 자동으로 ApiResponse 형식 반환
+raise NotFoundError()           # 404 {"status": "RESOURCE_NOT_FOUND", "message": "찾으시는 정보가 없어요"}
+raise ConflictError()           # 409 {"status": "RESOURCE_ALREADY_EXISTS", "message": "이미 등록된 정보예요"}
+raise UnauthorizedError()       # 401 {"status": "USER_AUTHENTICATION_FAILED", "message": "로그인이 필요해요"}
+
+# ❌ Never do this
+raise HTTPException(status_code=404, detail="Not found")
 ```

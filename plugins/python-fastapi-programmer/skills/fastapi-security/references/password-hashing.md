@@ -12,6 +12,43 @@ bcrypt는 salt를 자동으로 생성하고, 느린 해싱으로 무차별 대�
 3. **10 rounds**: bcrypt의 기본 cost factor (2^10 = 1024회 해싱)
 4. **환경 변수 없음**: bcrypt는 salt를 자동 생성 (별도 환경 변수 불필요)
 
+## Implementation
+
+```python
+import bcrypt
+
+
+def hash_password(password: str) -> str:
+    """비밀번호를 bcrypt로 해시"""
+    return bcrypt.hashpw(
+        password.encode("utf-8"), bcrypt.gensalt()
+    ).decode("utf-8")
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    """평문 비밀번호와 해시 비교"""
+    return bcrypt.checkpw(
+        password.encode("utf-8"), hashed.encode("utf-8")
+    )
+```
+
+## Usage in Use Cases
+
+```python
+# register.py (회원가입)
+from src.modules.users._models import User
+
+hashed = hash_password(request.password)
+user = User(email=request.email, password=hashed, name=request.name)
+db.add(user)
+db.commit()
+
+# login.py (로그인)
+user = db.exec(select(User).where(User.email == request.email)).first()
+if not user or not verify_password(request.password, user.password):
+    raise UnauthorizedError()  # 401, AppError 사용
+```
+
 ## 핵심 정리
 
 1. **bcrypt 사용**: 느린 해싱으로 무차별 대입 공격 방지

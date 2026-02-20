@@ -17,11 +17,24 @@ Vertical Slice Architecture는 기능별로 코드를 수직으로 분리하는 
 ```
 src/modules/{domain}/
 ├── __init__.py
-├── _models.py          # Entities (Domain 모델만)
+├── _models.py          # Entities (BaseModel 상속 → id, timestamps, soft_delete 포함)
 ├── register.py         # Use Case (회원가입 비즈니스 로직)
 ├── login.py            # Use Case (로그인 비즈니스 로직)
 ├── get_profile.py      # Use Case (프로필 조회 비즈니스 로직)
 └── router.py           # Interface Adapter (API 엔드포인트만)
+```
+
+### Entities 규칙
+
+```python
+# ✅ BaseModel 상속 (id, created_at, updated_at, deleted_at 자동 포함)
+from src.core.models import BaseModel as AppBaseModel
+
+class User(AppBaseModel, table=True):
+    __tablename__ = "users"
+    email: str = Field(max_length=255, unique=True)
+
+# ❌ SQLModel 직접 상속 + 수동 timestamp 금지
 ```
 
 ## 핵심 정리

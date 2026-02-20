@@ -11,7 +11,7 @@
         },
         {
           "type": "prompt",
-          "prompt": "Check ONLY the Dart file just modified for these anti-patterns. If found, fix immediately:\n- `ref.watch(` outside `build()` → `ref.read(`\n- `Dio().fetch(` without interceptors → add ResponseInterceptor + ErrorInterceptor\n- Model file/class with `Dto` suffix → rename to `Model`\n- `@freezed` class with `factory` missing `const` → `const factory`\n- `@riverpod` function with `FooRef ref` → `Ref ref`\n- `await ref.read(notifier).action(); ref.read(provider).when(` → use ref.listen in build()"
+          "prompt": "Check ONLY the Dart file just modified for these anti-patterns. If found, fix immediately:\n- `ref.watch(` outside `build()` → `ref.read(`\n- `Dio().fetch(` without interceptors → add ResponseInterceptor + ErrorInterceptor\n- Model file/class with `Dto` suffix → rename to `Model`\n- `@freezed` class with `factory` missing `const` → `const factory`\n- `@riverpod` function with `FooRef ref` → `Ref ref`\n- `await ref.read(notifier).action(); ref.read(provider).when(` → use ref.listen in build()\n- `.when(data:` inline in page body → use `AsyncValueWidget` widget\n- `EdgeInsets.all(16)` or similar hardcoded values → consider `AppSpacing.spacing4` tokens\n- Inline form validation logic → use `Validators.compose([...])` from validators.dart"
         }
       ]
     }

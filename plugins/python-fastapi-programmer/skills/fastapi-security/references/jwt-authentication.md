@@ -9,8 +9,9 @@ Authorization: Bearer {token}
 ```python
 import os
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from src.core.exceptions import UnauthorizedError, ForbiddenError
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
@@ -31,21 +32,28 @@ def get_current_user(
         user_id = payload.get("sub")
         user = db.get(User, user_id)
         if not user:
-            raise HTTPException(401, "User not found")
+            raise UnauthorizedError()  # 401, status=USER_AUTHENTICATION_FAILED
         return user
     except jwt.InvalidTokenError:
-        raise HTTPException(401, "Invalid token")
+        raise UnauthorizedError()  # 401, status=USER_AUTHENTICATION_FAILED
 ```
 
 ## Usage
 
 ```python
+from src.core.exceptions import ForbiddenError
+
 @router.get("/{user_id}")
 def get_profile(
     user_id: UUID,
     current_user: User = Depends(get_current_user)
 ):
     if current_user.id != user_id:
-        raise HTTPException(403, "Forbidden")
+        raise ForbiddenError()  # 403, status=PERMISSION_DENIED
     return current_user
 ```
+
+## Important
+
+- **Never** use `HTTPException` directly — always use `UnauthorizedError`, `ForbiddenError`, etc.
+- These exceptions automatically return `ApiResponse` format with proper `status` enum values.

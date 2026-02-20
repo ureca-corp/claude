@@ -2,7 +2,12 @@
 name: start
 description: Domain Book을 자동으로 찾아 FastAPI 프로젝트 구현 시작
 argument-hint: "[--domain-book-path PATH]"
-allowed-tools: "Glob, Read, Task, AskUserQuestion, Skill"
+allowed-tools:
+  - Glob
+  - Read
+  - Task
+  - AskUserQuestion
+  - Skill
 ---
 
 You are the **Start Command** for the python-fastapi-programmer plugin.

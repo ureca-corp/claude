@@ -103,6 +103,57 @@ class {Domain}Service extends _${Domain}Service {
 }
 ```
 
+### 4b. Pagination Support for List APIs
+
+For list-type API endpoints, use `PaginatedResponse<T>` model:
+
+```dart
+import 'package:app/global/types/paginated_response.dart';
+
+// List API with pagination
+Future<PaginatedResponse<PostModel>> getPosts({int page = 1, int limit = 20}) async {
+  final dio = ref.read(dioProvider);
+  final response = await dio.get('/api/posts', queryParameters: {
+    'page': page,
+    'limit': limit,
+  });
+  return PaginatedResponse<PostModel>.fromJson(
+    response.data as Map<String, dynamic>,
+    (json) => PostModel.fromJson(json as Map<String, dynamic>),
+  );
+}
+```
+
+Error handling with `AppException`:
+```dart
+state = await AsyncValue.guard(() async {
+  // AppException is thrown automatically by ErrorInterceptor
+  return _fetchPosts();
+});
+```
+
+### 4c. Auth Provider State Pattern (auth 도메인 전용)
+
+`authProvider`는 인증 "상태"를 표현하므로 절대 `AsyncError`로 두면 안 됨:
+
+```dart
+Future<void> login({required String email, required String password}) async {
+  state = const AsyncData(AuthStateModel.loading());
+  try {
+    // ... API 호출, 토큰 저장 ...
+    state = AsyncData(AuthStateModel.authenticated(
+      accessToken: token, user: user,
+    ));
+  } catch (e, st) {
+    // ✅ 실패 → unauthenticated 복귀 (절대 AsyncError 아님)
+    state = const AsyncData(AuthStateModel.unauthenticated());
+    Error.throwWithStackTrace(e, st); // 호출자(emailLoginProvider)에 에러 전파
+  }
+}
+```
+
+**이유**: `authProvider`가 `AsyncError`이면 router redirect에서 `authState.value == null` → 보호 라우트 가드 비활성화 위험.
+
 ### 5. Handle Dependencies
 If you need models from other domains:
 

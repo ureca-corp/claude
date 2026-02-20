@@ -142,6 +142,89 @@ Usage:
   await authService.login(email, password);
 ```
 
+### 6b. Standard Widget Patterns
+
+**AsyncValueWidget (REQUIRED for all async data)**:
+```dart
+import 'package:app/apps/ui/common/async_value_widget.dart';
+
+// Use instead of .when() inline
+AsyncValueWidget(
+  value: postListState,
+  emptyCheck: (posts) => posts.isEmpty,
+  emptyMessage: '게시글이 없습니다',
+  data: (posts) => ListView.builder(...),
+);
+```
+
+**Validators (REQUIRED for all forms)**:
+```dart
+import 'package:app/global/utils/validators.dart';
+
+TextFormField(
+  validator: Validators.compose([
+    Validators.required,
+    Validators.minLength(2, fieldName: '제목'),
+  ]),
+);
+```
+
+**withLoaderOverlay (REQUIRED for mutation buttons)**:
+```dart
+import 'package:app/global/utils/with_loader_overlay.dart';
+
+onPressed: () async {
+  await withLoaderOverlay(context, () async {
+    await ref.read(provider.notifier).create(model);
+  });
+}
+```
+
+**Theme Tokens**:
+```dart
+// Always use Theme.of(context) for colors and text
+final cs = Theme.of(context).colorScheme;
+final tt = Theme.of(context).textTheme;
+
+// Use AppSpacing/AppRadius when tokens are available
+import 'package:app/core/theme/tokens/generated/spacing.gen.dart';
+import 'package:app/core/theme/tokens/generated/radius.gen.dart';
+Padding(padding: EdgeInsets.all(AppSpacing.spacing4));
+```
+
+### 6c. Auth State Listening Pattern (Login Pages)
+
+로그인 페이지에서는 두 개의 `ref.listen`을 분리 사용:
+
+```dart
+// 1. 에러 표시 — emailLoginProvider 감시
+ref.listen(emailLoginProvider, (prev, next) {
+  if (next.hasError && !next.isLoading) {
+    final error = next.error;
+    final message = error is AppException
+        ? ExceptionHandler.getUserMessage(error)
+        : '로그인에 실패했습니다. 다시 시도해주세요.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+});
+
+// 2. 성공 네비게이션 — authProvider 감시
+ref.listen(authProvider, (prev, next) {
+  final isAuthenticated =
+      next.value?.mapOrNull(authenticated: (_) => true) ?? false;
+  if (isAuthenticated && context.mounted) {
+    RouterClient.home.go(context);
+  }
+});
+```
+
+**핵심 원칙**:
+- `authProvider`는 인증 "상태" → 성공 네비게이션 담당
+- `emailLoginProvider`는 폼 "결과" → 에러 메시지 담당
+- 에러를 `'${next.error}'`로 표시 금지 → `ExceptionHandler.getUserMessage()` 사용
+
 ### 7. Navigation
 ```dart
 // Import RouterClient

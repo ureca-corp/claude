@@ -182,6 +182,10 @@ Your tasks:
 
 Follow flutter-ddd-patterns skill for implementation guidelines.
 
+Note: For list-type APIs, use PaginatedResponse<T> model from lib/global/types/paginated_response.dart
+Example:
+  final paginated = PaginatedResponse<PostModel>.fromJson(response.data, (json) => PostModel.fromJson(json));
+
 Files you should create:
 - lib/apps/domain/{domain}/models/*_model.dart
 - lib/apps/domain/{domain}/services/{domain}_service.dart
