@@ -1,0 +1,65 @@
+{
+  "name": "python-fastapi-programmer",
+  "description": "Domain Book 기반 FastAPI 프로젝트 자동 생성 - 병렬 코드 생성 및 품질 보증",
+  "version": "1.0.0",
+  "author": {
+    "name": "ureca"
+  },
+  "tags": [
+    "fastapi",
+    "backend",
+    "code-generation",
+    "domain-driven-design",
+    "clean-architecture",
+    "sqlmodel",
+    "jwt-auth",
+    "postgis"
+  ],
+  "workflow": "sequential-with-approval",
+  "phases": [
+    {
+      "id": 1,
+      "name": "Domain Validator",
+      "agent": "phase-1-domain-validator",
+      "approval_required": true,
+      "output": "Domain Book 검증 리포트"
+    },
+    {
+      "id": 2,
+      "name": "Deep Researcher",
+      "agent": "phase-2-deep-researcher",
+      "approval_required": true,
+      "output": ".claude/SESSION.md (Clarifier + Research)"
+    },
+    {
+      "id": 3,
+      "name": "Env Generator",
+      "agent": "phase-3-env-generator",
+      "approval_required": true,
+      "output": ".env.example"
+    },
+    {
+      "id": 4,
+      "name": "Code Generator",
+      "agent": "phase-4-code-generator",
+      "approval_required": true,
+      "output": "src/modules/{domain}/* (병렬 생성)",
+      "parallel": true,
+      "team_based": true
+    },
+    {
+      "id": 5,
+      "name": "Code Reviewer",
+      "agent": "phase-5-code-reviewer",
+      "approval_required": true,
+      "output": "품질 검토 리포트"
+    },
+    {
+      "id": 6,
+      "name": "Documenter",
+      "agent": "phase-6-documenter",
+      "approval_required": false,
+      "output": "API 문서 + README.md"
+    }
+  ]
+}
