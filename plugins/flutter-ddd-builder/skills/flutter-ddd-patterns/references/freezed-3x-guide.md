@@ -34,7 +34,7 @@ Widget build(BuildContext context, WidgetRef ref) {
 
 ```dart
 @freezed
-class AddressModel with _$AddressModel {
+abstract class AddressModel with _$AddressModel {
   const factory AddressModel({
     required String street,
     required String city,
@@ -46,7 +46,7 @@ class AddressModel with _$AddressModel {
 }
 
 @freezed
-class UserModel with _$UserModel {
+abstract class UserModel with _$UserModel {
   const factory UserModel({
     required String id,
     required String name,
@@ -64,7 +64,7 @@ class UserModel with _$UserModel {
 
 ```dart
 @freezed
-class TimestampModel with _$TimestampModel {
+abstract class TimestampModel with _$TimestampModel {
   const factory TimestampModel({
     required String id,
     @JsonKey(name: 'created_at', fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
@@ -87,7 +87,7 @@ int _dateTimeToTimestamp(DateTime dateTime) =>
 
 ```dart
 @Freezed(genericArgumentFactories: true)
-class Result<T> with _$Result<T> {
+abstract class Result<T> with _$Result<T> {
   const factory Result.success(T data) = Success<T>;
   const factory Result.failure(String error) = Failure<T>;
 
@@ -111,7 +111,7 @@ userResult.when(
 
 ```dart
 @freezed
-class UserModel with _$UserModel {
+abstract class UserModel with _$UserModel {
   const UserModel._();  // Required for custom methods
 
   const factory UserModel({
@@ -142,7 +142,7 @@ class UserModel with _$UserModel {
 
 ```dart
 @freezed
-class EmailModel with _$EmailModel {
+abstract class EmailModel with _$EmailModel {
   const EmailModel._();
 
   const factory EmailModel({
@@ -171,7 +171,7 @@ class EmailModel with _$EmailModel {
 
 ```dart
 @freezed
-class PostListModel with _$PostListModel {
+abstract class PostListModel with _$PostListModel {
   const PostListModel._();
 
   const factory PostListModel({
@@ -235,7 +235,7 @@ enum UserRole {
 }
 
 @freezed
-class UserModel with _$UserModel {
+abstract class UserModel with _$UserModel {
   const factory UserModel({
     required String id,
     @Default(UserRole.guest) UserRole role,
@@ -264,7 +264,7 @@ enum SocialProvider {
 }
 
 @freezed
-class LoginMethodModel with _$LoginMethodModel {
+abstract class LoginMethodModel with _$LoginMethodModel {
   const factory LoginMethodModel({
     required SocialProvider provider,
     required String token,
@@ -281,13 +281,13 @@ class LoginMethodModel with _$LoginMethodModel {
 
 ```dart
 @freezed
-class ValidationResult<T> with _$ValidationResult<T> {
+abstract class ValidationResult<T> with _$ValidationResult<T> {
   const factory ValidationResult.valid(T value) = ValidationValid<T>;
   const factory ValidationResult.invalid(List<String> errors) = ValidationInvalid<T>;
 }
 
 @freezed
-class UserFormModel with _$UserFormModel {
+abstract class UserFormModel with _$UserFormModel {
   const UserFormModel._();
 
   const factory UserFormModel({
@@ -337,7 +337,7 @@ class UserModel {
 **After (Freezed):**
 ```dart
 @freezed
-class UserModel with _$UserModel {
+abstract class UserModel with _$UserModel {
   const factory UserModel({
     required String id,
     required String name,
@@ -378,7 +378,7 @@ const user = UserModel(id: '1', name: 'John');
 
 // ✅ Use @Default for common values
 @freezed
-class ConfigModel with _$ConfigModel {
+abstract class ConfigModel with _$ConfigModel {
   const factory ConfigModel({
     @Default(true) bool isEnabled,
     @Default('en') String locale,
@@ -457,7 +457,7 @@ dart run build_runner build --delete-conflicting-outputs
 **Solution:** Ensure private constructor exists:
 ```dart
 @freezed
-class UserModel with _$UserModel {
+abstract class UserModel with _$UserModel {
   const UserModel._();  // ← This is required for custom methods
 
   const factory UserModel({...}) = _UserModel;

@@ -14,6 +14,7 @@ whenToUse: |
   user: "Generate models and services for all domains in ai-context/domain-books/"
   assistant: "I'll spawn the logic-orchestrator to manage parallel domain implementation"
   </example>
+name: logic-orchestrator
 model: sonnet
 color: blue
 tools:
@@ -21,7 +22,9 @@ tools:
   - Write
   - Edit
   - Bash
-  - Teammate
+  - Task
+  - TeamCreate
+  - TeamDelete
   - TaskCreate
   - TaskUpdate
   - TaskList
@@ -170,30 +173,30 @@ Expected output:
 
 ```bash
 # Step 1: Generate API clients from OpenAPI spec (if exists)
-if [ -f specs/openapi.json ]; then
-  echo "📦 Generating API clients..."
+if [ -f swagger/api_spec.json ]; then
+  echo "Generating API clients..."
   dart run swagger_parser
   if [ $? -ne 0 ]; then
-    echo "⚠️ swagger_parser failed, retrying..."
+    echo "swagger_parser failed, retrying..."
     dart run swagger_parser
   fi
 fi
 
 # Step 2: Generate Freezed and Riverpod code
-echo "🔨 Generating code with build_runner..."
+echo "Generating code with build_runner..."
 dart run build_runner build --delete-conflicting-outputs
 
 # If build_runner fails, retry up to 3 times
 RETRIES=0
 while [ $? -ne 0 ] && [ $RETRIES -lt 3 ]; do
   RETRIES=$((RETRIES+1))
-  echo "⚠️ build_runner failed, retry $RETRIES/3..."
+  echo "build_runner failed, retry $RETRIES/3..."
   sleep 2
   dart run build_runner build --delete-conflicting-outputs
 done
 
 if [ $? -ne 0 ]; then
-  echo "❌ Code generation failed after 3 attempts"
+  echo "Code generation failed after 3 attempts"
   # Report to user and ask how to proceed
 fi
 ```
@@ -254,21 +257,22 @@ Domain Book: ai-context/domain-books/{domain}/
    Create {domain}_service.dart:
    - Use @riverpod annotation
    - Extend _${Domain}Service
-   - Access RestClient via: ref.read(httpClientProvider).restClient
+   - Access Dio via: ref.watch(dioProvider) or ref.read(dioProvider)
+   - Import: import 'package:app/apps/infra/common/client/dio_provider.dart';
    - Wrap all async operations with AsyncValue.guard
    - Implement methods for each endpoint in api-spec.md
    - Add part directive: part '{domain}_service.g.dart';
 
 5. Quality checks:
    - PostToolUse hook runs flutter analyze after EACH file you Write or Edit
-   - Fix any errors immediately (you have 3 retry attempts per file)
+   - Fix any errors immediately (up to 3 retry attempts per file)
    - If errors persist after 3 retries, SendMessage to team-lead for help
 
 6. Communicate dependencies:
    If you need models from other domains:
    - SendMessage to that domain's implementer: "I need {DomainName}.{ModelName}, is it ready?"
    - Wait for response before proceeding
-   - Import from: lib/apps/domain/{other-domain}/models/{model}_model.dart
+   - Import from: package:app/apps/domain/{other-domain}/models/{model}_model.dart
 
 7. Commit your work:
    After completing all models and services:
@@ -284,6 +288,12 @@ Domain Book: ai-context/domain-books/{domain}/
    Use TaskUpdate:
      taskId: your assigned task ID
      status: "completed"
+
+## Important Rules
+
+- **Absolute imports only**: Always use package:app/... (never relative ../)
+- **No Repository pattern**: Use dioProvider directly
+- **Dio access**: ref.watch(dioProvider) for reads, ref.read(dioProvider) for mutations
 
 ## Important Notes
 
@@ -312,18 +322,18 @@ spawned_teammates = {
 
 Display teammate status changes:
 ```
-🔄 flutter-logic-team Progress:
+flutter-logic-team Progress:
 
-  [12:34:56] 📋 Created task list: 3 domains + 1 integration
-  [12:35:10] 🌿 Created worktrees for auth, post, chat
-  [12:35:30] 🔨 Code generation complete
-  [12:35:45] 👥 Spawned 3 implementers
+  [12:34:56] Created task list: 3 domains + 1 integration
+  [12:35:10] Created worktrees for auth, post, chat
+  [12:35:30] Code generation complete
+  [12:35:45] Spawned 3 implementers
 
-  [12:36:00] ✅ auth-implementer: UserModel created
-  [12:36:15] ✅ auth-implementer: AuthStateModel created
-  [12:36:30] 🔄 auth-implementer: AuthService in progress
-  [12:36:45] ⏳ post-implementer: Waiting for auth.UserModel
-  [12:37:00] 🔄 chat-implementer: Blocked by auth task
+  [12:36:00] auth-implementer: UserModel created
+  [12:36:15] auth-implementer: AuthStateModel created
+  [12:36:30] auth-implementer: AuthService in progress
+  [12:36:45] post-implementer: Waiting for auth.UserModel
+  [12:37:00] chat-implementer: Blocked by auth task
 ```
 
 **Check TaskList periodically:**
@@ -338,11 +348,11 @@ Use TaskList to see:
 ```
 When you receive SendMessage from teammates:
 
-💬 [12:37:15] post-implementer → auth-implementer:
+[12:37:15] post-implementer → auth-implementer:
    "I need auth.UserModel for PostModel author field. Is it ready?"
 
-💬 [12:37:30] auth-implementer → post-implementer:
-   "UserModel is complete. Import from lib/apps/domain/auth/models/user_model.dart"
+[12:37:30] auth-implementer → post-implementer:
+   "UserModel is complete. Import from package:app/apps/domain/auth/models/user_model.dart"
 ```
 
 ### 7. Handle Errors
@@ -391,7 +401,7 @@ When domain fails:
 cd original_project_dir
 
 # Build for Android
-echo "🔨 Verifying Android build..."
+echo "Verifying Android build..."
 flutter build appbundle
 
 # Check exit code
@@ -420,7 +430,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Build for iOS
-echo "🔨 Verifying iOS build..."
+echo "Verifying iOS build..."
 flutter build ios
 
 # Same error handling as Android
@@ -461,7 +471,7 @@ parse_build_errors(build_output):
 cd original_project_dir
 
 for domain in ${domains[@]}; do
-  echo "🔀 Merging ${domain} domain..."
+  echo "Merging ${domain} domain..."
 
   git merge --no-ff feature/${domain}-domain -m "Merge ${domain} domain implementation
 
@@ -474,7 +484,7 @@ Co-Authored-By: ${domain}-implementer <agent@flutter-ddd-builder>"
   # Check for conflicts
   if [ $? -ne 0 ]; then
     # Merge conflict occurred
-    echo "⚠️ Merge conflict in ${domain} domain"
+    echo "Merge conflict in ${domain} domain"
 
     # Strategy: Automatic resolution (ours)
     git status --short | grep '^UU' | cut -d' ' -f2 | while read file; do
@@ -492,32 +502,46 @@ done
 
 **Create router domain files:**
 
-For each domain, create router file:
+For each domain, create a Route class file:
 
 ```
 Location: lib/apps/ui/router/domains/{domain}.dart
 
 Example for auth domain:
 ---
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import '../../../ui/pages/auth/login/page.dart';
 
 class LoginRoute {
-  static const path = '/auth/login';
+  const LoginRoute();
 
-  static GoRoute route() => GoRoute(
-    path: path,
-    builder: (context, state) => const LoginPage(),
-  );
+  static const path = '/login';
+  static const name = 'login';
 
-  void push(BuildContext context) {
-    context.push(path);
-  }
+  void go(BuildContext context) => context.go(path);
 }
 ---
 
 Use Write tool to create these files.
 ```
+
+**Update RouterClient (`lib/apps/ui/router/client.dart`):**
+
+```dart
+import 'package:app/apps/ui/router/domains/auth.dart';
+import 'package:app/apps/ui/router/domains/post.dart';
+// ... add new domain imports
+
+abstract final class RouterClient {
+  static const splash = SplashRoute();
+  static const login = LoginRoute();
+  // ... add new route instances
+}
+```
+
+**Update routes (`lib/apps/ui/router/routes.dart`):**
+
+Add GoRoute entries for new pages, importing pages from `package:app/apps/domain/{domain}/pages/{page}/{page}_page.dart`.
 
 ### 10. Cleanup
 
@@ -552,9 +576,7 @@ git worktree prune
 
 **Cleanup team:**
 ```
-Teammate.cleanup({
-  operation: "cleanup"
-})
+TeamDelete()
 
 This removes:
 - ~/.claude/teams/flutter-logic-team/
@@ -566,11 +588,11 @@ This removes:
 **Display comprehensive summary:**
 
 ```markdown
-✅ Business Logic Layer Implementation Complete
+Business Logic Layer Implementation Complete
 
 ## Domains Implemented ({completed_count}/{total_count})
 
-### ✅ auth domain
+### auth domain
   - Models: UserModel, AuthStateModel
   - Services: AuthService (login, logout, currentUser)
   - Files:
@@ -579,45 +601,29 @@ This removes:
     - lib/apps/domain/auth/services/auth_service.dart
   - Router: lib/apps/ui/router/domains/auth.dart
 
-### ✅ post domain
+### post domain
   - Models: PostModel
   - Services: PostService (getPosts, createPost, getPost)
   - Dependencies: Uses auth.UserModel
   - Files: [list files]
   - Router: lib/apps/ui/router/domains/post.dart
 
-### ✅ chat domain
-  - Models: ChatMessageModel
-  - Services: ChatService (getMessages, sendMessage)
-  - Dependencies: Uses auth.UserModel
-  - Files: [list files]
-  - Router: lib/apps/ui/router/domains/chat.dart
-
 ## Quality Verification
 
-✅ Code Generation
-  - swagger_parser: Success
-  - build_runner: Success
-
-✅ Static Analysis
-  - flutter analyze: All domains passed
-
-✅ Build Verification
-  - Android (appbundle): ✅ Success
-  - iOS: ✅ Success
+- Code Generation: swagger_parser + build_runner Success
+- Static Analysis: flutter analyze passed
+- Build Verification: Android + iOS Success
 
 ## Team Performance
 
 - Total domains: 3
 - Completed: 3
 - Skipped: 0
-- Total time: ~15 minutes
-- Parallel efficiency: 3x speedup
 
 {IF skipped_domains NOT empty:}
-## ⚠️ Skipped Domains
+## Skipped Domains
 
-### ❌ {domain}
+### {domain}
   - Reason: {reason}
   - Errors: {error_details}
   - Recommendation: {how_to_fix}

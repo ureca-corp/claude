@@ -1,5 +1,5 @@
 ---
-description: Implements individual Flutter UI screen (page and components) based on screen plan. Works in isolated worktree, creates ConsumerStatefulWidget pages following si_taelimwon_app conventions, and coordinates with other implementers for shared components.
+description: Implements individual Flutter UI screen (page and components) based on screen plan. Works in isolated worktree, creates ConsumerStatefulWidget pages following project conventions, and coordinates with other implementers for shared components.
 whenToUse: |
   This agent is spawned by ui-orchestrator for each screen. Not directly invoked by users.
 
@@ -8,6 +8,7 @@ whenToUse: |
   orchestrator: "Spawn ui-implementer for login screen"
   system: "login-page-builder agent created in worktree ../project-ui-login"
   </example>
+name: ui-implementer
 model: sonnet
 color: yellow
 tools:
@@ -47,12 +48,12 @@ Read ai-context/screen-layouts.md → Your screen's section
 
 ### 3. Determine File Path
 ```
-Parse screen.path to get depth1/depth2:
-  /auth/login → depth1=auth, depth2=login
-  /home → depth1=home, depth2=home
-  /post/create → depth1=post, depth2=create
+Parse screen info to determine domain and page name:
+  /auth/login → domain=auth, page=login
+  /home → domain=home, page=home
+  /post/create → domain=post, page=create
 
-Page location: lib/apps/ui/pages/{depth1}/{depth2}/page.dart
+Page location: lib/apps/domain/{domain}/pages/{page}/{page}_page.dart
 ```
 
 ### 4. Create Page File
@@ -60,6 +61,7 @@ Page location: lib/apps/ui/pages/{depth1}/{depth2}/page.dart
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class {Screen}Page extends ConsumerStatefulWidget {
   const {Screen}Page({super.key});
@@ -120,29 +122,39 @@ Before creating global component:
     "I need AuthGuard component. Has anyone created it?"
 
   If yes: Import instead
-  If no: Create in lib/apps/ui/common/components/
+  If no: Create in lib/apps/domain/{domain}/components/
 ```
 
 **Page-specific components**:
 ```
-Location: lib/apps/ui/pages/{depth1}/{depth2}/components/{name}_component.dart
+Location: lib/apps/domain/{domain}/pages/{page}/components/{name}_component.dart
 ```
 
 ### 6. Import Services
 ```dart
-import '../../../../apps/domain/{domain}/services/{service}_service.dart';
+import 'package:app/apps/domain/{domain}/services/{service}_service.dart';
 
 Example:
-  import '../../../../apps/domain/auth/services/auth_service.dart';
+  import 'package:app/apps/domain/auth/services/auth_service.dart';
 
 Usage:
   final authService = ref.watch(authServiceProvider);
   await authService.login(email, password);
 ```
 
-### 7. Commit Work
+### 7. Navigation
+```dart
+// Import RouterClient
+import 'package:app/apps/ui/router/app_router.dart';
+
+// Navigate using RouterClient
+RouterClient.login.go(context);
+RouterClient.postDetail.push(context, id: postId);
+```
+
+### 8. Commit Work
 ```bash
-git add lib/apps/ui/pages/{depth1}/{depth2}/
+git add lib/apps/domain/{domain}/pages/{page}/
 git commit -m "feat(ui): implement {screen} screen
 
 - ConsumerStatefulWidget page
@@ -152,13 +164,35 @@ git commit -m "feat(ui): implement {screen} screen
 Co-Authored-By: {screen}-page-builder <agent@flutter-ddd-builder>"
 ```
 
-### 8. Report Completion
+### 9. Report Completion
 ```
 TaskUpdate({
   taskId: {your_task_id},
   status: "completed"
 })
 ```
+
+## Design Principles
+
+### MUI Component Based Minimalism
+- Use Material 3 built-in components first: `FilledButton`, `OutlinedButton`, `Card`, `ListTile`, `AppBar`, etc.
+- Minimize custom widgets — leverage Material Design components
+- Text-first design, no unnecessary decorations
+
+### Lucide Icons
+- Use `LucideIcons.*` from `package:lucide_icons` instead of `Icons.*`
+- Exception: Material-specific icons that don't exist in Lucide
+
+### Theme Tokens
+- Colors: `Theme.of(context).colorScheme` (alias `cs`)
+- Typography: `Theme.of(context).textTheme` (alias `tt`)
+- No hardcoded color or text style values
+
+## Important Rules
+
+- **Absolute imports only**: Always use `package:app/...` (never relative `../`)
+- **Page location**: `lib/apps/domain/{domain}/pages/{page}/{page}_page.dart`
+- **Navigation**: Use `RouterClient.{route}.go(context)` or `.push(context)`
 
 ## Error Handling
 

@@ -72,9 +72,10 @@ Task({
 
 For each screen:
 1. Design layout with ASCII art (boxes, lines, text)
-2. Show components (TextField, Button, ListView, etc.)
+2. Show components (TextField, FilledButton, OutlinedButton, ListView, Card, ListTile, etc.)
 3. Indicate which domain services are used
-4. Show navigation flow
+4. Show navigation flow (using RouterClient pattern)
+5. Use LucideIcons instead of Icons
 
 Output format: JSON + Markdown
 
@@ -83,9 +84,11 @@ JSON file (ai-context/screen-plan.json):
   "screens": [
     {
       "name": "login",
-      "path": "/auth/login",
+      "path": "/login",
+      "domain": "auth",
+      "page_dir": "login",
       "services": ["auth.AuthService"],
-      "components": ["TextField", "Button"],
+      "components": ["TextField", "FilledButton"],
       "description": "User login screen"
     },
     ...
@@ -93,27 +96,28 @@ JSON file (ai-context/screen-plan.json):
 }
 
 Markdown file (ai-context/screen-layouts.md):
-## 로그인 화면
-경로: /auth/login
-서비스: auth.AuthService
+## Login Screen
+Domain: auth
+Page: lib/apps/domain/auth/pages/login/login_page.dart
+Services: auth.AuthService
 
 ### Layout
-┌─────────────────────────────┐
-│  [← 뒤로]      로그인        │
-├─────────────────────────────┤
-│                             │
-│  TextField (이메일)          │
-│    → email input            │
-│                             │
-│  TextField (비밀번호)        │
-│    → password input         │
-│                             │
-│  Button (로그인)             │
-│    → auth.login()           │
-│                             │
-│  TextButton (회원가입)       │
-│    → Navigate to /register  │
-└─────────────────────────────┘
++-----------------------------+
+|  [<- Back]      Login       |
++-----------------------------+
+|                             |
+|  TextField (Email)          |
+|    -> email input           |
+|                             |
+|  TextField (Password)       |
+|    -> password input        |
+|                             |
+|  FilledButton (Login)       |
+|    -> auth.login()          |
+|                             |
+|  TextButton (Sign Up)       |
+|    -> RouterClient.register |
++-----------------------------+
 
 ... (all screens)
 
@@ -126,38 +130,32 @@ Follow PRD requirements and use available services from Domain Book.`
 **Display screen plan in terminal:**
 
 ```
-📱 Generated Screen Plan:
+Generated Screen Plan:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. 로그인 화면 (/auth/login)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┌─────────────────────────────┐
-│  [← 뒤로]      로그인        │
-├─────────────────────────────┤
-│                             │
-│  TextField (이메일)          │
-│    → email input            │
-│                             │
-│  TextField (비밀번호)        │
-│    → password input         │
-│                             │
-│  Button (로그인)             │
-│    → auth.login()           │
-│                             │
-│  TextButton (회원가입)       │
-│    → Navigate to /register  │
-└─────────────────────────────┘
+1. Login Screen (/login)
++-----------------------------+
+|  [<- Back]      Login       |
++-----------------------------+
+|                             |
+|  TextField (Email)          |
+|    -> email input           |
+|                             |
+|  TextField (Password)       |
+|    -> password input        |
+|                             |
+|  FilledButton (Login)       |
+|    -> auth.login()          |
+|                             |
+|  TextButton (Sign Up)       |
+|    -> RouterClient.register |
++-----------------------------+
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-2. 홈 피드 화면 (/home)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. Post List Screen (/posts)
 ...
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📄 Full plan saved to:
+Full plan saved to:
   - ai-context/screen-plan.json
   - ai-context/screen-layouts.md
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 **Get user approval:**
@@ -199,8 +197,8 @@ AskUserQuestion({
     header: "Modifications",
     multiSelect: false,
     options: [
-      {label: "Screen 1 (로그인)", description: "Modify login screen"},
-      {label: "Screen 2 (홈)", description: "Modify home screen"},
+      {label: "Screen 1 (Login)", description: "Modify login screen"},
+      {label: "Screen 2 (Home)", description: "Modify home screen"},
       {label: "Other", description: "Type your changes"}
     ]
   }]
@@ -230,8 +228,8 @@ Proceed to Step 4
 Read ai-context/screen-plan.json
 
 screens = [
-  {name: 'login', path: '/auth/login', ...},
-  {name: 'home', path: '/home', ...},
+  {name: 'login', path: '/login', domain: 'auth', page_dir: 'login', ...},
+  {name: 'post-list', path: '/posts', domain: 'post', page_dir: 'list', ...},
   ...
 ]
 ```
@@ -252,7 +250,7 @@ Teammate.spawnTeam({
 FOR EACH screen IN screens:
   TaskCreate({
     subject: "Implement {screen.name} screen",
-    description: "Create ConsumerStatefulWidget page for {screen.name} at {screen.path}. Use services: {screen.services}. Components: {screen.components}",
+    description: "Create ConsumerStatefulWidget page at lib/apps/domain/{screen.domain}/pages/{screen.page_dir}/{screen.page_dir}_page.dart. Use services: {screen.services}. Components: {screen.components}",
     activeForm: "Implementing {screen.name} screen"
   })
 
@@ -302,40 +300,43 @@ Branch: feature/ui-{screen.name}
 
 Screen plan:
 - Path: {screen.path}
+- Domain: {screen.domain}
+- Page dir: {screen.page_dir}
 - Services: {screen.services}
 - Layout: (refer to ai-context/screen-layouts.md - {screen.name} section)
 
 Your tasks:
 1. Create ConsumerStatefulWidget page at:
-   lib/apps/ui/pages/{depth1}/{depth2}/page.dart
-   (Determine depth1/depth2 from path)
+   lib/apps/domain/{screen.domain}/pages/{screen.page_dir}/{screen.page_dir}_page.dart
 
-2. Follow si_taelimwon_app conventions:
-   - File name is always "page.dart"
+2. Follow project conventions:
    - Use ConsumerStatefulWidget (not StatefulWidget)
-   - Import required services from domain layer
+   - Import services from domain layer using absolute imports
    - Use Theme.of(context).colorScheme for colors
    - Use Theme.of(context).textTheme for text styles
 
-3. UI Design Principles (from CLAUDE.md):
-   - Minimalist: Text-first, icons only when functional
-   - No unnecessary placeholders or decorations
-   - Clean spacing and typography
+3. UI Design Principles:
+   - MUI Component Based Minimalism: Use Material 3 components (FilledButton, OutlinedButton, Card, ListTile, etc.)
+   - Lucide Icons: Use LucideIcons.* from package:lucide_icons (not Icons.*)
+   - Text-first, no unnecessary decorations
    - SingleChildScrollView for keyboard overflow
    - textInputAction + onSubmitted for form flow
    - Callbacks as methods (prefix _), not inline
 
-4. Create components if needed:
-   - Page-specific: lib/apps/ui/pages/{depth1}/{depth2}/components/
-   - Global shared: lib/apps/ui/common/components/
-   - Check with other teammates before creating global components (SendMessage)
+4. Navigation:
+   - Import: package:app/apps/ui/router/app_router.dart
+   - Use: RouterClient.{route}.go(context) or .push(context)
 
-5. After EACH file creation, flutter analyze runs automatically (PostToolUse hook)
+5. Create components if needed:
+   - Domain-specific: lib/apps/domain/{screen.domain}/components/
+   - Check with other teammates before creating shared components (SendMessage)
+
+6. After EACH file creation, flutter analyze runs automatically (PostToolUse hook)
    - Fix errors immediately (up to 3 retries)
 
-6. Communicate with teammates if you're creating shared components (SendMessage)
+7. All imports must be absolute: package:app/...
 
-7. Mark task complete when done (TaskUpdate)
+8. Mark task complete when done (TaskUpdate)
 
 Layout reference from screen plan:
 {ASCII art for this screen from screen-layouts.md}
@@ -344,7 +345,8 @@ Remember:
 - PostToolUse hook automatically runs flutter analyze
 - Use methods for callbacks, not inline functions
 - SingleChildScrollView for forms
-- Theme tokens, no hardcoded colors`
+- Theme tokens, no hardcoded colors
+- LucideIcons, not Icons`
 })
 ```
 
@@ -353,13 +355,13 @@ Remember:
 **Real-time streaming:**
 
 ```
-🎨 flutter-ui-team Progress:
-  ✅ login-page-builder: LoginPage created
-  ✅ login-page-builder: Email/password form complete
-  🔄 home-page-builder: HomePage scaffold created
-  🔄 home-page-builder: Post list component in progress
-  💬 profile-page-builder → login-page-builder: "You created AuthGuard? I need it too"
-  💬 login-page-builder → profile-page-builder: "Yes, it's in lib/apps/ui/common/components/auth_guard.dart"
+flutter-ui-team Progress:
+  login-page-builder: LoginPage created
+  login-page-builder: Email/password form complete
+  home-page-builder: HomePage scaffold created
+  home-page-builder: Post list component in progress
+  profile-page-builder -> login-page-builder: "You created AuthGuard? I need it too"
+  login-page-builder -> profile-page-builder: "Yes, import from package:app/apps/domain/auth/components/auth_guard.dart"
 ```
 
 **Track TaskList and display summary periodically**
@@ -370,7 +372,7 @@ Remember:
 
 ```
 Scenario:
-  login-page-builder creates lib/apps/ui/common/components/auth_guard.dart
+  login-page-builder creates lib/apps/domain/auth/components/auth_guard.dart
   profile-page-builder also tries to create auth_guard.dart
 
 Detection:
@@ -381,7 +383,7 @@ Resolution:
     "I also need AuthGuard. Did you create it?"
 
   login-page-builder responds:
-    "Yes, import from lib/apps/ui/common/components/auth_guard.dart"
+    "Yes, import from package:app/apps/domain/auth/components/auth_guard.dart"
 
   profile-page-builder: Import instead of creating
 ```
@@ -401,10 +403,10 @@ IF duplicate component detected:
 ```bash
 cd original_project_dir
 
-echo "🔨 Building for Android..."
+echo "Building for Android..."
 flutter build appbundle
 
-echo "🔨 Building for iOS..."
+echo "Building for iOS..."
 flutter build ios
 ```
 
@@ -431,50 +433,35 @@ Co-Authored-By: ${screen_name}-page-builder <agent@flutter-ddd-builder>
 done
 ```
 
-**Register routes in router:**
-
-Update `lib/apps/ui/router/routes.dart` to include all new routes:
+**Create/Update Route classes** in `lib/apps/ui/router/domains/{domain}.dart`:
 
 ```dart
-// Add new routes from screen plan
-final router = GoRouter(
-  routes: [
-    // Existing routes
-    ...
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
 
-    // New routes
-    GoRoute(
-      path: '/auth/login',
-      builder: (context, state) => LoginPage(),
-    ),
-    GoRoute(
-      path: '/home',
-      builder: (context, state) => HomePage(),
-    ),
-    ...
-  ],
-);
+class {Screen}Route {
+  const {Screen}Route();
+
+  static const path = '/{path}';
+  static const name = '{name}';
+
+  void go(BuildContext context) => context.go(path);
+  Future<T?> push<T>(BuildContext context) => context.push<T>(path);
+}
 ```
 
-**Update RouterClient if needed:**
-
-Create route classes in `lib/apps/ui/router/client.dart`:
+**Update RouterClient** (`lib/apps/ui/router/client.dart`):
 
 ```dart
-class RouterClient {
-  static final login = LoginRoute();
-  static final home = HomeRoute();
-  ...
-}
-
-class LoginRoute {
-  static const path = '/auth/login';
-
-  void push(BuildContext context) {
-    context.push(path);
-  }
+abstract final class RouterClient {
+  // ... existing routes
+  static const newScreen = NewScreenRoute();
 }
 ```
+
+**Update routes** (`lib/apps/ui/router/routes.dart`):
+
+Add GoRoute entries importing pages from `package:app/apps/domain/{domain}/pages/{page}/{page}_page.dart`.
 
 ### Step 11: Cleanup
 
@@ -487,26 +474,28 @@ class LoginRoute {
 ### Step 12: Final Report
 
 ```
-✅ UI Layer Complete
+UI Layer Complete
 
 Screens Implemented:
-  ✅ 로그인 (/auth/login) - LoginPage
-  ✅ 홈 피드 (/home) - HomePage
-  ✅ 프로필 (/profile) - ProfilePage
-  ✅ 글 작성 (/post/create) - PostCreatePage
+  Login (/login) - LoginPage
+  Post List (/posts) - PostListPage
+  Profile (/profile) - ProfilePage
+  Post Create (/posts/create) - PostCreatePage
 
 Components Created:
-  ✅ Global: AuthGuard, AppBarTitle
-  ✅ Page-specific: LoginForm, PostList, PostCard
+  Domain: AuthGuard, PostCard
+  Page-specific: LoginForm, PostList
 
 Routes Registered:
-  ✅ lib/apps/ui/router/routes.dart updated
-  ✅ lib/apps/ui/router/client.dart updated
+  lib/apps/ui/router/domains/auth.dart updated
+  lib/apps/ui/router/domains/post.dart updated
+  lib/apps/ui/router/client.dart updated
+  lib/apps/ui/router/routes.dart updated
 
 Quality Checks:
-  ✅ flutter analyze - All screens passed
-  ✅ flutter build appbundle - Success
-  ✅ flutter build ios - Success
+  flutter analyze - All screens passed
+  flutter build appbundle - Success
+  flutter build ios - Success
 
 Next Steps:
   1. Review UI implementation
@@ -535,11 +524,12 @@ Next Steps:
 
 ### Route Organization
 
-**Follow si_taelimwon_app patterns:**
-- Pages at `lib/apps/ui/pages/{depth1}/{depth2}/page.dart`
-- Always named `page.dart` (not `login_page.dart`)
-- Depth1/depth2 from route path (e.g., `/auth/login` → `auth/login/page.dart`)
-- Router files: `routes.dart` (global), `client.dart` (static instances)
+**Follow project patterns:**
+- Pages at `lib/apps/domain/{domain}/pages/{page}/{page}_page.dart`
+- Route classes in `lib/apps/ui/router/domains/{domain}.dart`
+- RouterClient in `lib/apps/ui/router/client.dart` (const instances)
+- GoRouter config in `lib/apps/ui/router/routes.dart`
+- Navigation: `RouterClient.{route}.go(context)` or `.push(context)`
 
 ### Real-Time Progress
 
@@ -580,13 +570,13 @@ Load these skills:
 
 ## Success Criteria
 
-✅ ASCII art screen plan approved by user
-✅ All screens implemented as ConsumerStatefulWidget
-✅ Components created (no duplicates)
-✅ Routes registered in router
-✅ All analyze checks passed
-✅ All builds succeeded
-✅ Worktrees cleaned up
-✅ Team shut down
+ASCII art screen plan approved by user
+All screens implemented as ConsumerStatefulWidget
+Components created (no duplicates)
+Routes registered (Route classes + RouterClient + routes.dart)
+All analyze checks passed
+All builds succeeded
+Worktrees cleaned up
+Team shut down
 
 Execute this workflow to generate a complete, production-ready UI layer.

@@ -135,8 +135,8 @@ git worktree list
 **Execute once before spawning teammates:**
 
 ```bash
-# Generate API clients if openapi.json exists
-if [ -f specs/openapi.json ]; then
+# Generate API clients if swagger spec exists
+if [ -f swagger/api_spec.json ]; then
   dart run swagger_parser
 fi
 
@@ -173,7 +173,8 @@ Your tasks:
    - Parse api-spec.md for request/response models
 3. Create Riverpod 3.x services in lib/apps/domain/{domain}/services/
    - Parse api-spec.md for endpoints
-   - Integrate with generated RestClient
+   - Use dioProvider directly (no Repository pattern)
+   - Import: package:app/apps/infra/common/client/dio_provider.dart
 4. After EACH file creation, flutter analyze will run automatically (PostToolUse hook)
    - Fix any errors immediately (up to 3 retries)
 5. Communicate with other teammates if you need models from other domains (SendMessage)
@@ -185,6 +186,11 @@ Files you should create:
 - lib/apps/domain/{domain}/models/*_model.dart
 - lib/apps/domain/{domain}/services/{domain}_service.dart
 
+Rules:
+- Absolute imports only: package:app/...
+- No Repository pattern: use dioProvider directly
+- Freezed 3.x: abstract class with const private constructor
+
 Remember: PostToolUse hook automatically runs flutter analyze after each file write/edit.`
 })
 ```
@@ -195,11 +201,11 @@ Remember: PostToolUse hook automatically runs flutter analyze after each file wr
 
 Display teammate progress in real-time:
 ```
-🔄 flutter-logic-team Progress:
-  ✅ auth-implementer: UserModel created, analyzing...
-  ✅ auth-implementer: AuthService created, analyzing...
-  🔄 post-implementer: PostModel in progress...
-  ⏳ chat-implementer: Waiting (blocked by auth)
+flutter-logic-team Progress:
+  auth-implementer: UserModel created, analyzing...
+  auth-implementer: AuthService created, analyzing...
+  post-implementer: PostModel in progress...
+  chat-implementer: Waiting (blocked by auth)
 ```
 
 **Track with TaskList:**
@@ -213,8 +219,8 @@ Periodically check TaskList to show:
 **Teammate messages:**
 Display SendMessage communication:
 ```
-💬 post-implementer → auth-implementer: "Need auth.UserModel, is it ready?"
-💬 auth-implementer → post-implementer: "UserModel complete, import from lib/apps/domain/auth/models/user_model.dart"
+post-implementer -> auth-implementer: "Need auth.UserModel, is it ready?"
+auth-implementer -> post-implementer: "UserModel complete, import from package:app/apps/domain/auth/models/user_model.dart"
 ```
 
 ### Step 7: Handle Errors and Retries
@@ -254,7 +260,7 @@ At end, report skipped domains to user
 cd original_project_dir
 
 # Build for Android
-echo "🔨 Building for Android..."
+echo "Building for Android..."
 flutter build appbundle
 
 # If Android build fails:
@@ -265,34 +271,10 @@ flutter build appbundle
 #   4. Retry build
 
 # Build for iOS
-echo "🔨 Building for iOS..."
+echo "Building for iOS..."
 flutter build ios
 
 # Same error handling as Android
-```
-
-**Build error handling strategy:**
-
-```
-build_errors = analyze_build_output()
-
-FOR EACH error IN build_errors:
-  affected_domain = identify_domain(error.file_path)
-
-  IF worktree_for_domain_exists(affected_domain):
-    # Teammate still active, reassign
-    SendMessage({
-      type: "message",
-      recipient: "{affected_domain}-implementer",
-      content: "Build error in {error.file_path}: {error.message}. Please fix.",
-      summary: "Build error needs fix"
-    })
-    Wait for fix
-  ELSE:
-    # Worktree merged, fix directly
-    Fix error in main branch
-
-  Retry build
 ```
 
 ### Step 9: Integration
@@ -319,16 +301,12 @@ done
 
 ```
 IF merge conflict:
-  # Strategy: Automatic resolution (ours)
   git checkout --ours conflicted_file
   git add conflicted_file
-
-  # Then manual check
   Review conflicted_file
   IF needs manual resolution:
     Fix manually
     git add conflicted_file
-
   git commit -m "Merge ${domain} domain (resolved conflicts)"
 ```
 
@@ -337,22 +315,30 @@ IF merge conflict:
 For each domain, create `lib/apps/ui/router/domains/{domain}.dart`:
 
 ```dart
-// Example: lib/apps/ui/router/domains/auth.dart
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-class LoginRoute {
-  static const path = '/auth/login';
+class {Page}Route {
+  const {Page}Route();
 
-  static GoRoute route() => GoRoute(
-    path: path,
-    builder: (context, state) => LoginPage(),
-  );
+  static const path = '/{path}';
+  static const name = '{name}';
 
-  void push(BuildContext context) {
-    context.push(path);
-  }
+  void go(BuildContext context) => context.go(path);
+  Future<T?> push<T>(BuildContext context) => context.push<T>(path);
 }
 ```
+
+**Update RouterClient** (`lib/apps/ui/router/client.dart`):
+```dart
+abstract final class RouterClient {
+  // ... existing + new route instances
+  static const newRoute = NewRoute();
+}
+```
+
+**Update routes** (`lib/apps/ui/router/routes.dart`):
+Add GoRoute entries importing pages from `package:app/apps/domain/{domain}/pages/{page}/{page}_page.dart`.
 
 ### Step 10: Cleanup
 
@@ -393,24 +379,24 @@ Teammate.cleanup({
 **Display summary to user:**
 
 ```
-✅ Business Logic Layer Complete
+Business Logic Layer Complete
 
 Domains Implemented:
-  ✅ auth - UserModel, AuthStateModel, AuthService
-  ✅ post - PostModel, PostService
-  ✅ chat - ChatMessageModel, ChatService
+  auth - UserModel, AuthStateModel, AuthService
+  post - PostModel, PostService
+  chat - ChatMessageModel, ChatService
 
 Router Files Created:
-  ✅ lib/apps/ui/router/domains/auth.dart
-  ✅ lib/apps/ui/router/domains/post.dart
-  ✅ lib/apps/ui/router/domains/chat.dart
+  lib/apps/ui/router/domains/auth.dart
+  lib/apps/ui/router/domains/post.dart
+  lib/apps/ui/router/domains/chat.dart
 
 Quality Checks:
-  ✅ flutter analyze - All domains passed
-  ✅ flutter build appbundle - Success
-  ✅ flutter build ios - Success
+  flutter analyze - All domains passed
+  flutter build appbundle - Success
+  flutter build ios - Success
 
-⚠️ Skipped Domains: {skipped_domains if any}
+Skipped Domains: {skipped_domains if any}
 
 Next Steps:
   1. Review generated code
@@ -439,14 +425,6 @@ Next Steps:
 - File creation events
 - Analyze results
 - Build progress
-
-**Format:**
-```
-🔄 [12:34:56] auth-implementer: Creating UserModel...
-✅ [12:34:58] auth-implementer: UserModel created, analyze passed
-🔄 [12:35:01] auth-implementer: Creating AuthService...
-💬 [12:35:15] post-implementer → auth-implementer: "Need UserModel"
-```
 
 ### Error Recovery
 
@@ -487,13 +465,13 @@ Load these skills for implementation:
 
 ## Success Criteria
 
-✅ All domains from Domain Book implemented
-✅ Freezed models generated and valid
-✅ Riverpod services integrated with API client
-✅ Router domain files created
-✅ All analyze checks passed
-✅ All builds succeeded (appbundle + ios)
-✅ Worktrees cleaned up
-✅ Team shut down
+All domains from Domain Book implemented
+Freezed models generated and valid
+Riverpod services integrated with Dio directly
+Router domain files created
+All analyze checks passed
+All builds succeeded (appbundle + ios)
+Worktrees cleaned up
+Team shut down
 
 Execute this workflow to generate a complete, production-ready business logic layer.

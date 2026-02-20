@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'user_model_example.freezed.dart';
 part 'user_model_example.g.dart';
 
-/// Example Freezed 3.x model following si_taelimwon_app conventions
+/// Example Freezed 3.x model following Flutter DDD conventions
 @freezed
 abstract class UserModel with _$UserModel {
   const UserModel._();

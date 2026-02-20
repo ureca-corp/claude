@@ -36,9 +36,9 @@ cc  # Claude Code 실행
 ### 필수 사항
 
 1. **Flutter SDK** (^3.11.0-296.4.beta 이상)
-2. **Domain Book 문서**: `ai-context/domain-book/` 디렉토리에 도메인별 문서
+2. **Domain Book 문서**: `ai-context/domain-books/` 디렉토리에 도메인별 문서
    ```
-   ai-context/domain-book/
+   ai-context/domain-books/
    ├── auth/
    │   ├── README.md
    │   ├── features.md
@@ -54,16 +54,41 @@ cc  # Claude Code 실행
 ### 선택 사항
 
 - `swagger_parser.yaml` 설정 (OpenAPI 기반 API 클라이언트 생성 시)
-- `specs/openapi.json` (API 스펙이 있는 경우)
+- `swagger/api_spec.json` (API 스펙이 있는 경우)
 
 ## 🎯 Usage
+
+### `/start` - 전체 파이프라인 실행 (추천)
+
+Domain Book부터 Logic → UI까지 전체 코드 생성 파이프라인을 한 번에 실행합니다.
+
+```bash
+# 전체 파이프라인 (Logic + UI)
+/start
+
+# 비즈니스 로직만 (UI 건너뛰기)
+/start --skip-ui
+
+# 커스텀 Domain Book 경로
+/start --domain-book-path custom/domains/
+```
+
+**파이프라인 순서:**
+1. Preflight Check (필수 파일 확인)
+2. Domain Book 읽기 + 요약 표시
+3. 코드 생성 (swagger_parser + build_runner)
+4. 비즈니스 로직 레이어 (모델 + 서비스)
+5. 빌드 검증
+6. UI 레이어 (화면 기획 → 승인 → 구현)
+7. 최종 검증 (analyze + build)
+8. 종합 리포트
 
 ### `/logic` - 비즈니스 로직 레이어 생성
 
 Domain Book을 읽고 도메인 레이어를 자동 생성합니다.
 
 ```bash
-# 기본 경로 사용 (ai-context/domain-book/)
+# 기본 경로 사용 (ai-context/domain-books/)
 /logic
 
 # 커스텀 경로 지정
@@ -98,10 +123,12 @@ PRD와 Domain Book API 명세를 읽고 화면을 자동 생성합니다.
 ```
 
 **생성되는 코드:**
-- `lib/apps/ui/pages/{depth1}/{depth2}/page.dart` - ConsumerStatefulWidget 페이지
-- `lib/apps/ui/pages/{depth1}/{depth2}/components/*.dart` - 페이지 전용 컴포넌트
-- `lib/apps/ui/common/components/*.dart` - 전역 공유 컴포넌트
+- `lib/apps/domain/{domain}/pages/{page}/{page}_page.dart` - ConsumerStatefulWidget 페이지
+- `lib/apps/domain/{domain}/pages/{page}/components/*.dart` - 페이지 전용 컴포넌트
+- `lib/apps/domain/{domain}/components/*.dart` - 도메인 공유 컴포넌트
 - `lib/apps/ui/router/routes.dart` - GoRouter 라우트 등록
+- `lib/apps/ui/router/client.dart` - RouterClient 업데이트
+- `lib/apps/ui/router/domains/{domain}.dart` - Route 클래스
 
 **워크플로우:**
 1. PRD + Domain Book API 읽기
@@ -121,7 +148,7 @@ PRD와 Domain Book API 명세를 읽고 화면을 자동 생성합니다.
 # Flutter DDD Builder Settings
 
 ## 경로 설정
-- domain_book_path: ai-context/domain-book/
+- domain_book_path: ai-context/domain-books/
 - prd_path: ai-context/PRD.md
 - screen_plan_path: ai-context/screen-plan.md
 
@@ -207,12 +234,12 @@ flutter build ios
 
 ### "Domain Book을 찾을 수 없습니다"
 
-**원인**: `ai-context/domain-book/` 디렉토리가 없거나 비어있음
+**원인**: `ai-context/domain-books/` 디렉토리가 없거나 비어있음
 
 **해결**:
 ```bash
 # 디렉토리 생성
-mkdir -p ai-context/domain-book/auth
+mkdir -p ai-context/domain-books/auth
 
 # domain-book-builder로 문서 생성
 /domain-book-builder:1-clarify
