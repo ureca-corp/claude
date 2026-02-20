@@ -4,8 +4,14 @@
       "matcher": "Write|Edit",
       "hooks": [
         {
+          "type": "command",
+          "command": "bash \"$HOME/.claude/plugins/flutter-ddd-builder/hooks/dart-analyze.sh\"",
+          "timeout": 30,
+          "statusMessage": "Analyzing Dart file..."
+        },
+        {
           "type": "prompt",
-          "prompt": "If you just modified a Dart file in lib/ or test/ directory (lib/**/*.dart or test/**/*.dart), run 'flutter analyze' to check for errors. If errors exist, fix them immediately (maximum 3 retry attempts). All errors and warnings must be addressed before proceeding, unless the user has configured specific ignore rules in .claude/flutter-ddd-builder.local.md. After 3 failed attempts, report the issue to the user."
+          "prompt": "Check ONLY the Dart file just modified for these anti-patterns. If found, fix immediately:\n- `ref.watch(` outside `build()` → `ref.read(`\n- `Dio().fetch(` without interceptors → add ResponseInterceptor + ErrorInterceptor\n- Model file/class with `Dto` suffix → rename to `Model`\n- `@freezed` class with `factory` missing `const` → `const factory`\n- `@riverpod` function with `FooRef ref` → `Ref ref`\n- `await ref.read(notifier).action(); ref.read(provider).when(` → use ref.listen in build()"
         }
       ]
     }
