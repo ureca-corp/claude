@@ -1,6 +1,8 @@
 ---
 name: test-code-generator
-description: Generates E2E integration tests based on Domain Book specifications (team member)
+description: |
+  Generates E2E integration tests based on Domain Book specifications (team member).
+  <example>Context: Team lead spawns test generator for a domain\nuser: "users 도메인 E2E 테스트 생성해줘"\nassistant: "I'll use the test-code-generator to create E2E integration tests from Domain Book specs."\n<commentary>Test generator creates E2E tests within a team context.</commentary></example>
 model: inherit
 color: cyan
 ---
@@ -61,6 +63,55 @@ Skill(skill="python-fastapi-programmer:fastapi-postgis")
 - **SQLModel ORM 필수** (raw SQL 절대 금지)
 - **환경 변수 기반 테스트** (.env.example 참조)
 - **환경 변수 미설정 시 pytest.skip()**
+
+## 응답 구조 규칙 (필수)
+
+모든 API 응답은 `ApiResponse` 래퍼를 사용합니다.
+
+### 성공 응답
+```python
+response = client.post("/api/users/register", json=data)
+assert response.status_code == 201
+body = response.json()
+assert body["status"] == "SUCCESS"
+assert body["message"]  # 한글 메시지
+assert body["data"]["id"]  # 실제 데이터
+```
+
+### 에러 응답
+```python
+# ❌ 잘못된 예 (detail 필드 사용)
+assert "이메일 중복" in response.json()["detail"]
+
+# ✅ 올바른 예 (status + message 필드 사용)
+body = response.json()
+assert body["status"] == "RESOURCE_ALREADY_EXISTS"  # Status enum 값
+assert body["message"]  # 한글 에러 메시지
+```
+
+### 에러 코드 참조
+| HTTP | Status enum | 설명 |
+|------|-------------|------|
+| 401 | USER_AUTHENTICATION_FAILED | 인증 실패 |
+| 403 | PERMISSION_DENIED | 권한 없음 |
+| 404 | RESOURCE_NOT_FOUND | 리소스 없음 |
+| 409 | RESOURCE_ALREADY_EXISTS | 중복 |
+| 422 | VALIDATION_FAILED | 유효성 실패 |
+
+### 페이지네이션 응답
+```python
+response = client.get("/api/users?page=1&size=20")
+body = response.json()
+assert body["status"] == "SUCCESS"
+assert body["data"]["meta"]["total_item_count"] >= 0
+assert isinstance(body["data"]["items"], list)
+```
+
+### X-Trace-Id 헤더
+```python
+# 모든 응답에 x-trace-id 헤더 포함 (미들웨어 자동 추가)
+assert "x-trace-id" in response.headers
+```
 
 ## 작업 흐름
 
@@ -176,7 +227,9 @@ def test_user_registration_and_login_flow(client, db_session):
     }
     register_response = client.post("/api/users/register", json=register_data)
     assert register_response.status_code == 201
-    user_id = register_response.json()["id"]
+    body = register_response.json()
+    assert body["status"] == "SUCCESS"
+    user_id = body["data"]["id"]
 
     # 2. 로그인
     login_data = {
@@ -185,7 +238,9 @@ def test_user_registration_and_login_flow(client, db_session):
     }
     login_response = client.post("/api/users/login", json=login_data)
     assert login_response.status_code == 200
-    token = login_response.json()["access_token"]
+    login_body = login_response.json()
+    assert login_body["status"] == "SUCCESS"
+    token = login_body["data"]["access_token"]
     assert token is not None
 
     # 3. 인증된 프로필 조회
@@ -194,9 +249,10 @@ def test_user_registration_and_login_flow(client, db_session):
         headers={"Authorization": f"Bearer {token}"}
     )
     assert profile_response.status_code == 200
-    profile_data = profile_response.json()
-    assert profile_data["email"] == "test@example.com"
-    assert profile_data["name"] == "테스트 유저"
+    profile_body = profile_response.json()
+    assert profile_body["status"] == "SUCCESS"
+    assert profile_body["data"]["email"] == "test@example.com"
+    assert profile_body["data"]["name"] == "테스트 유저"
 
 
 def test_user_registration_duplicate_email(client, db_session):
@@ -219,8 +275,10 @@ def test_user_registration_duplicate_email(client, db_session):
 
     # 두 번째 회원가입 실패 (중복 이메일)
     second_response = client.post("/api/users/register", json=register_data)
-    assert second_response.status_code == 400
-    assert "이메일 중복" in second_response.json()["detail"]
+    assert second_response.status_code == 409
+    second_body = second_response.json()
+    assert second_body["status"] == "RESOURCE_ALREADY_EXISTS"
+    assert second_body["message"]
 
 
 def test_user_login_invalid_password(client, db_session):
@@ -246,7 +304,9 @@ def test_user_login_invalid_password(client, db_session):
     }
     login_response = client.post("/api/users/login", json=login_data)
     assert login_response.status_code == 401
-    assert "인증 실패" in login_response.json()["detail"]
+    login_body = login_response.json()
+    assert login_body["status"] == "USER_AUTHENTICATION_FAILED"
+    assert login_body["message"]
 ```
 
 #### 4.3 conftest.py 생성 (DB 픽스처)
@@ -286,7 +346,7 @@ git commit -m "test: {domain} E2E 테스트 생성
 - 환경 변수 기반 테스트 (Mock 데이터 금지)
 - SQLModel ORM 사용
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
 ### Step 6: 팀 SESSION.md 업데이트
@@ -360,11 +420,12 @@ def test_crud_flow(client, db_session):
     """Create → Read → Update → Delete 전체 플로우"""
     # Create
     create_response = client.post("/api/resources", json={...})
-    resource_id = create_response.json()["id"]
+    resource_id = create_response.json()["data"]["id"]
 
     # Read
     read_response = client.get(f"/api/resources/{resource_id}")
     assert read_response.status_code == 200
+    assert read_response.json()["status"] == "SUCCESS"
 
     # Update
     update_response = client.put(f"/api/resources/{resource_id}", json={...})
@@ -385,7 +446,7 @@ def test_auth_flow(client, db_session):
 
     # 로그인
     login_response = client.post("/api/auth/login", json={...})
-    token = login_response.json()["access_token"]
+    token = login_response.json()["data"]["access_token"]
 
     # 인증된 요청
     protected_response = client.get(

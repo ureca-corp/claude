@@ -40,11 +40,26 @@ openapi_extra={
 
 **File Structure**:
 ```
-src/modules/{domain}/
-├── _models.py      # Entities
-├── register.py     # Use Case
-├── dtos.py         # DTOs
-└── router.py       # Interface Adapter
+src/
+├── core/                    # 프레임워크 공통 모듈 (수정 금지)
+│   ├── config.py            # 환경 변수 (Settings)
+│   ├── models.py            # BaseModel (TimestampMixin + SoftDeleteMixin)
+│   ├── response.py          # ApiResponse[T] + Status enum
+│   ├── exceptions.py        # AppError 계열 예외
+│   ├── pagination.py        # OffsetPage[T], CursorPage[T]
+│   ├── sorting.py           # parse_sort, SortField
+│   ├── logger.py            # structlog 로거
+│   ├── masking.py           # 민감 정보 마스킹
+│   ├── middleware.py         # Pure ASGI 미들웨어
+│   ├── utils.py             # EnvironmentHelper
+│   └── database.py          # DB 연결
+├── modules/{domain}/        # 도메인별 Vertical Slice
+│   ├── _models.py           # Entities (BaseModel 상속)
+│   ├── register.py          # Use Case
+│   ├── dtos.py              # DTOs
+│   └── router.py            # Interface Adapter
+└── app/
+    └── main.py              # FastAPI 엔트리포인트
 ```
 
 **See references/** for complete examples and patterns.

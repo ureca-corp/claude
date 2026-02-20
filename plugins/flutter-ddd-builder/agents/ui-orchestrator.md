@@ -73,6 +73,20 @@ for screen in ${screens[@]}; do
 done
 ```
 
+### 3b. Preflight Utility Check
+
+```bash
+# Verify UI utilities exist
+for file in \
+  lib/apps/ui/common/async_value_widget.dart \
+  lib/global/utils/validators.dart \
+  lib/global/utils/with_loader_overlay.dart; do
+  if [ ! -f "$file" ]; then
+    echo "WARNING: Missing $file - UI utilities incomplete"
+  fi
+done
+```
+
 ### 4. Spawn Implementers
 ```
 For each screen:

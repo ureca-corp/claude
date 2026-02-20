@@ -1,3 +1,5 @@
+import 'package:app/apps/infra/exception/app_exception.dart';
+import 'package:app/apps/infra/exception/exception_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:app/apps/domain/post/models/post_create_model.dart';
@@ -55,8 +57,12 @@ class _PostCreatePageState extends ConsumerState<PostCreatePage> {
           }
         },
         error: (error, _) {
+          // ✅ AppException이면 사용자 친화적 메시지, 아니면 generic
+          final message = error is AppException
+              ? ExceptionHandler.getUserMessage(error)
+              : '오류가 발생했습니다. 다시 시도해주세요.';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('오류: $error')),
+            SnackBar(content: Text(message)),
           );
         },
       );

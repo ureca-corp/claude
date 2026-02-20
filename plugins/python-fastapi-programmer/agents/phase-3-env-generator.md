@@ -1,6 +1,9 @@
 ---
 name: phase-3-env-generator
-description: Detects external services from Domain Books and generates .env.example file
+description: |
+  Detects external services from Domain Books and generates .env.example file.
+  <example>Context: User wants to generate environment variable templates\nuser: "환경 변수 파일 생성해줘"\nassistant: "I'll use the phase-3-env-generator agent to detect services and generate .env.example."\n<commentary>Phase 3 auto-detects external services and creates env templates.</commentary></example>
+  <example>Context: User wants to detect external API dependencies\nuser: "외부 API 의존성 분석해줘"\nassistant: "I'll use the env-generator to scan Domain Books for external service dependencies."\n<commentary>The agent scans domain books for API keywords and generates env vars.</commentary></example>
 model: inherit
 color: green
 ---
@@ -226,7 +229,7 @@ Write(session_md_path, session_content)
 ```python
 # Phase 4 Orchestrator 호출
 Task(
-    subagent_type="phase-4-code-generator",
+    subagent_type="python-fastapi-programmer:phase-4-code-generator",
     description="팀 생성 및 병렬 코드 생성",
     prompt="Domain Book 기반으로 도메인별 팀을 생성하고, 환경 변수 기반 코드를 생성하세요."
 )

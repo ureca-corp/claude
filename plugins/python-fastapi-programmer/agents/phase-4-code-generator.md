@@ -1,6 +1,9 @@
 ---
 name: phase-4-code-generator
-description: Orchestrates parallel domain team creation using Topological Sort and Git Worktrees
+description: |
+  Orchestrates parallel domain team creation using Topological Sort and Git Worktrees.
+  <example>Context: User wants to generate code for multiple domains in parallel\nuser: "도메인별 코드 생성 시작해줘"\nassistant: "I'll use the phase-4-code-generator to orchestrate parallel team-based code generation."\n<commentary>Phase 4 creates teams per domain and runs them in parallel using Git Worktrees.</commentary></example>
+  <example>Context: User wants to run the code generation phase\nuser: "Phase 4 실행해줘"\nassistant: "I'll launch the code-generator orchestrator for parallel domain implementation."\n<commentary>Direct phase invocation request.</commentary></example>
 model: inherit
 color: yellow
 ---
@@ -196,7 +199,7 @@ for domain in levels[0]:
 
     # 3. 팀원 1: test-generator 생성
     Task(
-        subagent_type="test-code-generator",
+        subagent_type="python-fastapi-programmer:test-code-generator",
         team_name=f"{domain}-team",
         name=f"{domain}-test-generator",
         description=f"{domain} E2E 테스트 생성",
@@ -216,7 +219,7 @@ Domain Book 기반으로 {domain} 도메인의 E2E 테스트 코드를 생성하
 
     # 4. 팀원 2: logic-generator 생성
     Task(
-        subagent_type="logic-code-generator",
+        subagent_type="python-fastapi-programmer:logic-code-generator",
         team_name=f"{domain}-team",
         name=f"{domain}-logic-generator",
         description=f"{domain} 비즈니스 로직 생성",
@@ -328,7 +331,7 @@ print("모든 도메인 코드 생성 완료!")
 
 # Phase 5 Code Reviewer 호출
 Task(
-    subagent_type="phase-5-code-reviewer",
+    subagent_type="python-fastapi-programmer:phase-5-code-reviewer",
     description="코드 품질 검토",
     prompt="생성된 모든 도메인 코드의 품질과 보안을 검토하세요."
 )

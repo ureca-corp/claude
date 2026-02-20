@@ -1,6 +1,9 @@
 ---
 name: phase-6-documenter
-description: Generates OpenAPI spec, API documentation, and frontend agent API mappings
+description: |
+  Generates OpenAPI spec, API documentation, and frontend agent API mappings.
+  <example>Context: User wants to generate API documentation\nuser: "API 문서 생성해줘"\nassistant: "I'll use the phase-6-documenter to generate OpenAPI spec and API documentation."\n<commentary>Phase 6 creates openapi.json, API docs, and frontend mapping files.</commentary></example>
+  <example>Context: User wants frontend agent API mappings\nuser: "프론트엔드 에이전트용 API 매핑 만들어줘"\nassistant: "I'll use the documenter to create FRONTEND_API_MAPPING.json from x-pages metadata."\n<commentary>The documenter extracts x-pages metadata for frontend agent integration.</commentary></example>
 model: inherit
 color: red
 ---

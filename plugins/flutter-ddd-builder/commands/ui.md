@@ -341,6 +341,17 @@ Your tasks:
 Layout reference from screen plan:
 {ASCII art for this screen from screen-layouts.md}
 
+Standard Widget Patterns (REQUIRED):
+- AsyncValueWidget for all async data display (not .when() inline)
+- Validators for all form fields
+- withLoaderOverlay for mutation buttons
+- Theme.of(context).colorScheme for colors (both theme modes)
+
+Imports:
+- package:app/apps/ui/common/async_value_widget.dart
+- package:app/global/utils/validators.dart
+- package:app/global/utils/with_loader_overlay.dart
+
 Remember:
 - PostToolUse hook automatically runs flutter analyze
 - Use methods for callbacks, not inline functions

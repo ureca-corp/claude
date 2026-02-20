@@ -1,7 +1,7 @@
 {
   "name": "python-fastapi-programmer",
   "description": "Domain Book 기반 FastAPI 프로젝트 자동 생성 - 병렬 코드 생성 및 품질 보증",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "author": {
     "name": "ureca"
   },

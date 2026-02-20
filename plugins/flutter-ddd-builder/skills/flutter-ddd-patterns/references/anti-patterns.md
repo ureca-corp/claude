@@ -103,6 +103,58 @@ static const path = '/posts/new';
 static const detailPath = '/posts/:id';
 ```
 
+## 8. Auth Provider를 AsyncError로 두는 실수
+
+```dart
+// ❌ WRONG: 로그인 실패 시 authProvider가 AsyncError로 남음
+// → router redirect에서 authState.value == null → 인증 가드 비활성화
+Future<void> login(...) async {
+  try { ... } catch (e, st) {
+    state = AsyncError<AuthStateModel>(e, st); // 상태 의미 모호
+    rethrow;
+  }
+}
+
+// ✅ CORRECT: 실패 시 unauthenticated로 복귀 + 에러는 호출자에 전파
+Future<void> login(...) async {
+  try { ... } catch (e, st) {
+    state = const AsyncData(AuthStateModel.unauthenticated());
+    Error.throwWithStackTrace(e, st); // rethrow 대신 스택 보존
+  }
+}
+```
+
+**이유**: `authProvider`는 "인증 상태"를 표현. `AsyncError`는 유효한 인증 상태가 아님. 에러 메시지는 `emailLoginProvider`가 담당 (역할 분리).
+
+## 9. Router redirect에서 null auth value 무시
+
+```dart
+// ❌ WRONG: null이면 리다이렉트 안 함 → AsyncError 시 보호 라우트 우회 가능
+if (authValue == null) return null;
+
+// ✅ CORRECT: null이면 미인증 취급 (AsyncLoading 중에만 예외)
+if (authState.isLoading && authValue == null) return null;
+if (authValue == null) {
+  return _authPaths.contains(currentPath) ? null : LoginRoute.path;
+}
+```
+
+**이유**: defense-in-depth. `authProvider`가 예기치 않은 상태여도 보호 라우트 접근 차단.
+
+## 10. 로그인 에러를 raw toString으로 표시
+
+```dart
+// ❌ WRONG: 사용자에게 DioException 원문 노출
+SnackBar(content: Text('${next.error}'));
+
+// ✅ CORRECT: AppException이면 사용자 친화적 메시지, 아니면 generic
+final error = next.error;
+final message = error is AppException
+    ? ExceptionHandler.getUserMessage(error)
+    : '로그인에 실패했습니다. 다시 시도해주세요.';
+SnackBar(content: Text(message));
+```
+
 ## Auth Interceptor — Token Refresh Retry
 
 ```dart
