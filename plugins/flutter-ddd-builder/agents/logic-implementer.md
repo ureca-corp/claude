@@ -8,6 +8,7 @@ whenToUse: |
   orchestrator: "Spawn logic-implementer for auth domain"
   system: "auth-implementer agent created in worktree ../project-auth"
   </example>
+name: logic-implementer
 model: sonnet
 color: green
 tools:
@@ -84,20 +85,18 @@ abstract class {Entity}Model with _${Entity}Model {
 **Template**:
 ```dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../models/{entity}_model.dart';
-import '../../../infra/http/generated/rest_client.dart';
-import '../../../infra/common/client/http_client.dart';
+import 'package:app/apps/domain/{domain}/models/{entity}_model.dart';
+import 'package:app/apps/infra/common/client/dio_provider.dart';
 
 part '{domain}_service.g.dart';
 
 @riverpod
 class {Domain}Service extends _${Domain}Service {
-  RestClient get _client => ref.read(httpClientProvider).restClient;
-
   // Implement methods from api-spec.md
   Future<{Entity}Model> get{Entity}(String id) async {
+    final dio = ref.watch(dioProvider);
     return await AsyncValue.guard(() async {
-      final response = await _client.get{Entity}(id);
+      final response = await dio.get('/api/{entities}/$id');
       return {Entity}Model.fromJson(response.data);
     }).then((value) => value.requireValue);
   }
@@ -121,7 +120,7 @@ Example: chat domain needs auth.UserModel
 2. Wait for response
 
 3. When ready, import:
-   import '../../auth/models/user_model.dart';
+   import 'package:app/apps/domain/auth/models/user_model.dart';
 ```
 
 ### 6. Commit Work
@@ -173,6 +172,13 @@ SendMessage to team-lead with update
 If you create a shared model that others might need:
 SendMessage to relevant teammates
 ```
+
+## Important Rules
+
+- **Absolute imports only**: Always use `package:app/...` (never relative `../`)
+- **No Repository pattern**: Use `dioProvider` directly
+- **Freezed 3.x**: Use `abstract class` syntax with `const` private constructor
+- **Model naming**: Always use `{Entity}Model` suffix
 
 ## Skills
 

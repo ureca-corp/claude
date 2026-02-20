@@ -8,6 +8,7 @@ whenToUse: |
   system: "Screen plan approved by user"
   command: "Spawn ui-orchestrator to coordinate UI implementation"
   </example>
+name: ui-orchestrator
 model: sonnet
 color: cyan
 tools:
@@ -15,7 +16,9 @@ tools:
   - Write
   - Edit
   - Bash
-  - Teammate
+  - Task
+  - TeamCreate
+  - TeamDelete
   - TaskCreate
   - TaskUpdate
   - TaskList
@@ -56,7 +59,7 @@ Teammate.spawnTeam({
 For each screen:
   TaskCreate({
     subject: "Implement {screen.name} screen",
-    description: "Create page at {screen.path} using {screen.services}",
+    description: "Create page at lib/apps/domain/{domain}/pages/{page}/{page}_page.dart using {screen.services}",
     activeForm: "Implementing {screen.name} screen"
   })
 ```
@@ -79,9 +82,11 @@ For each screen:
     name: "{screen}-page-builder",
     prompt: "Implement {screen} screen in worktree ../${PROJECT_NAME}-ui-${screen}.
             Follow screen-plan.json and screen-layouts.md for design.
-            Path: {screen.path}
+            Page location: lib/apps/domain/{domain}/pages/{page}/{page}_page.dart
             Services: {screen.services}
-            Components: {screen.components}"
+            Components: {screen.components}
+            Use absolute imports (package:app/...), RouterClient for navigation,
+            LucideIcons instead of Icons, Material 3 components."
   })
 ```
 
@@ -110,16 +115,43 @@ If errors:
 for screen in ${screens[@]}; do
   git merge --no-ff feature/ui-${screen}
 done
-
-# Register routes in lib/apps/ui/router/routes.dart
-# Update RouterClient
 ```
+
+**Create Route classes** in `lib/apps/ui/router/domains/{domain}.dart`:
+
+```dart
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
+
+class {Screen}Route {
+  const {Screen}Route();
+
+  static const path = '/{path}';
+  static const name = '{name}';
+
+  void go(BuildContext context) => context.go(path);
+  Future<T?> push<T>(BuildContext context) => context.push<T>(path);
+}
+```
+
+**Update RouterClient** (`lib/apps/ui/router/client.dart`):
+
+```dart
+abstract final class RouterClient {
+  // ... existing routes
+  static const newRoute = NewRoute();  // Add new entries
+}
+```
+
+**Update routes** (`lib/apps/ui/router/routes.dart`):
+
+Add GoRoute entries importing pages from `package:app/apps/domain/{domain}/pages/{page}/{page}_page.dart`.
 
 ### 9. Cleanup
 ```
 Shutdown teammates
 Remove worktrees
-Teammate.cleanup()
+TeamDelete()
 ```
 
 ### 10. Report
@@ -129,7 +161,7 @@ Display summary with implemented screens, components, routes.
 
 - [ ] All screens implemented
 - [ ] No duplicate components
-- [ ] Routes registered
+- [ ] Routes registered (Route classes + RouterClient + routes.dart)
 - [ ] Builds passed
 - [ ] Team cleaned up
 

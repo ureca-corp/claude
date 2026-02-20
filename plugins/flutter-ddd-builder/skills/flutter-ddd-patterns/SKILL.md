@@ -1,7 +1,7 @@
 ---
 name: Flutter DDD Patterns
-description: This skill should be used when creating "Freezed models", "Riverpod services", "API clients", "domain models", "AsyncNotifier", or working with Flutter DDD architecture. Provides patterns for Freezed 3.x, Riverpod 3.x, and API client integration following si_taelimwon_app conventions.
-version: 0.1.0
+description: This skill should be used when creating "Freezed models", "Riverpod services", "API clients", "domain models", "AsyncNotifier", or working with Flutter DDD architecture. Provides patterns for Freezed 3.x, Riverpod 3.x, and API client integration following project conventions.
+version: 0.2.0
 ---
 
 # Flutter DDD Patterns
@@ -10,10 +10,10 @@ Provides comprehensive patterns for implementing Flutter Domain-Driven Design ar
 
 ## Purpose
 
-Standardize code generation for Flutter DDD projects following the si_taelimwon_app architecture:
+Standardize code generation for Flutter DDD projects:
 - Freezed 3.x models with immutable data structures
 - Riverpod 3.x AsyncNotifier services with proper error handling
-- API client integration using generated RestClient
+- API client integration using Dio directly (no Repository pattern)
 - Consistent file structure and naming conventions
 
 ## When to Use
@@ -35,15 +35,26 @@ lib/apps/
 │   ├── models/
 │   │   ├── {entity}_model.dart
 │   │   └── {entity}_model.freezed.dart (generated)
-│   └── services/
-│       ├── {domain}_service.dart
-│       └── {domain}_service.g.dart (generated)
+│   ├── services/
+│   │   ├── {domain}_service.dart
+│   │   └── {domain}_service.g.dart (generated)
+│   ├── pages/
+│   │   └── {page}/
+│   │       ├── {page}_page.dart
+│   │       └── {page}_provider.dart
+│   └── components/           # Domain-specific widgets
 ├── infra/
-│   ├── common/client/http_client.dart
+│   ├── common/client/dio_provider.dart
 │   └── http/generated/              # swagger_parser output
 │       ├── rest_client.dart
 │       └── *.dart (models, requests, responses)
-└── ui/router/domains/{domain}.dart
+└── ui/
+    └── router/
+        ├── app_router.dart      # barrel export
+        ├── client.dart          # RouterClient (const instances)
+        ├── routes.dart          # GoRouter goRouterConfig
+        └── domains/
+            └── {domain}.dart    # Route classes
 ```
 
 ### Code Generation Workflow
@@ -52,7 +63,7 @@ lib/apps/
 2. Write Riverpod services in `lib/apps/domain/{domain}/services/`
 3. Run code generation:
    ```bash
-   dart run swagger_parser  # If specs/openapi.json exists
+   dart run swagger_parser  # If swagger/api_spec.json exists
    dart run build_runner build --delete-conflicting-outputs
    ```
 
@@ -148,26 +159,25 @@ const factory UserModel({
 ```dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/{entity}_model.dart';
-import '../../../infra/http/generated/rest_client.dart';
-import '../../../infra/common/client/http_client.dart';
+import 'package:app/apps/domain/{domain}/models/{entity}_model.dart';
+import 'package:app/apps/infra/common/client/dio_provider.dart';
 
 part '{domain}_service.g.dart';
 
 @riverpod
 class {Domain}Service extends _${Domain}Service {
-  RestClient get _client => ref.read(httpClientProvider).restClient;
-
   Future<{Entity}Model> get{Entity}(String id) async {
+    final dio = ref.watch(dioProvider);
     return await AsyncValue.guard(() async {
-      final response = await _client.get{Entity}(id);
+      final response = await dio.get('/api/{entities}/$id');
       return {Entity}Model.fromJson(response.data);
     }).then((value) => value.requireValue);
   }
 
   Future<void> create{Entity}({Entity}Model model) async {
+    final dio = ref.read(dioProvider);
     await AsyncValue.guard(() async {
-      await _client.create{Entity}(model.toJson());
+      await dio.post('/api/{entities}', data: model.toJson());
     });
   }
 }
@@ -177,17 +187,19 @@ class {Domain}Service extends _${Domain}Service {
 
 - **Annotation**: `@riverpod` (lowercase)
 - **Extends**: `_${Domain}Service` (generated base class)
-- **Client access**: Via `ref.read(httpClientProvider).restClient`
+- **Client access**: Via `ref.watch(dioProvider)` or `ref.read(dioProvider)`
 - **Error handling**: `AsyncValue.guard` pattern
 - **Return types**: Use `Future<T>` for async operations
+- **No Repository pattern**: Dio is called directly from providers/services
 
 ### AsyncValue.guard Pattern
 
 **For operations returning data:**
 ```dart
 Future<UserModel> getUser(String id) async {
+  final dio = ref.watch(dioProvider);
   return await AsyncValue.guard(() async {
-    final response = await _client.getUser(id);
+    final response = await dio.get('/api/users/$id');
     return UserModel.fromJson(response.data);
   }).then((value) => value.requireValue);
 }
@@ -196,8 +208,9 @@ Future<UserModel> getUser(String id) async {
 **For void operations:**
 ```dart
 Future<void> deleteUser(String id) async {
+  final dio = ref.read(dioProvider);
   await AsyncValue.guard(() async {
-    await _client.deleteUser(id);
+    await dio.delete('/api/users/$id');
   });
 }
 ```
@@ -205,16 +218,16 @@ Future<void> deleteUser(String id) async {
 **With error transformation:**
 ```dart
 Future<List<PostModel>> getPosts() async {
+  final dio = ref.watch(dioProvider);
   return await AsyncValue.guard(() async {
-    final response = await _client.getPosts();
-    return response.data
+    final response = await dio.get('/api/posts');
+    return (response.data as List)
         .map((json) => PostModel.fromJson(json))
         .toList();
   }).then((asyncValue) {
     return asyncValue.when(
       data: (data) => data,
       error: (error, stack) {
-        // Transform error if needed
         throw Exception('Failed to load posts: $error');
       },
       loading: () => throw Exception('Should not be loading'),
@@ -231,14 +244,14 @@ Future<List<PostModel>> getPosts() async {
 
 ## API Client Integration
 
-### Using swagger_parser Generated Clients
+### Using Dio Directly (No Repository Pattern)
 
-The project uses `swagger_parser` to generate API clients from `specs/openapi.json`.
+The project uses `dioProvider` for all API calls. Providers call Dio directly without a Repository layer.
 
 **Configuration (`swagger_parser.yaml`):**
 ```yaml
 swagger_parser:
-  schema_path: specs/openapi.json
+  schema_path: swagger/api_spec.json
   output_directory: lib/apps/infra/http/generated
   use_freezed3: true
   client_postfix: Client
@@ -256,32 +269,96 @@ lib/apps/infra/http/generated/
 └── ...
 ```
 
-### Accessing RestClient in Services
+### Accessing Dio in Services
 
 **Standard pattern:**
 ```dart
 @riverpod
 class AuthService extends _$AuthService {
-  RestClient get _client => ref.read(httpClientProvider).restClient;
-
   Future<UserModel> login(String email, String password) async {
+    final dio = ref.read(dioProvider);
     return await AsyncValue.guard(() async {
-      final request = LoginRequestModel(
-        email: email,
-        password: password,
-      );
-      final response = await _client.login(request);
+      final response = await dio.post('/api/auth/login', data: {
+        'email': email,
+        'password': password,
+      });
       return UserModel.fromJson(response.data);
     }).then((value) => value.requireValue);
   }
 }
 ```
 
-**With authentication:**
+## Router Pattern
+
+### Route Class Pattern
+
+Each domain has route classes in `lib/apps/ui/router/domains/{domain}.dart`:
+
 ```dart
-RestClient get _client => ref.read(httpClientProvider).restClient;
-// httpClientProvider includes AuthInterceptor for token injection
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
+
+class LoginRoute {
+  const LoginRoute();
+
+  static const path = '/login';
+  static const name = 'login';
+
+  void go(BuildContext context) => context.go(path);
+}
+
+class PostDetailRoute {
+  const PostDetailRoute();
+
+  static const path = '/posts/:id';
+  static const name = 'post-detail';
+
+  void go(BuildContext context, {required String id}) =>
+      context.go('/posts/$id');
+
+  Future<T?> push<T>(BuildContext context, {required String id}) =>
+      context.push<T>('/posts/$id');
+}
 ```
+
+### RouterClient Pattern
+
+`lib/apps/ui/router/client.dart`:
+```dart
+import 'package:app/apps/ui/router/domains/auth.dart';
+import 'package:app/apps/ui/router/domains/post.dart';
+
+abstract final class RouterClient {
+  static const splash = SplashRoute();
+  static const login = LoginRoute();
+  static const postList = PostListRoute();
+  static const postDetail = PostDetailRoute();
+}
+```
+
+### Navigation Usage
+
+```dart
+// Navigate using RouterClient
+RouterClient.login.go(context);
+RouterClient.postDetail.push(context, id: postId);
+```
+
+## UI Design Principles
+
+### MUI Component Based Minimalism
+- Use Material 3 built-in components first: `FilledButton`, `OutlinedButton`, `Card`, `ListTile`, `AppBar`, etc.
+- Minimize custom widgets — leverage Material Design components
+- Text-first design, icons only when functional
+
+### Lucide Icons
+- Use `LucideIcons.*` from `package:lucide_icons` instead of `Icons.*`
+- Exception: Material-specific icons that don't exist in Lucide
+
+### Theme Tokens
+- Colors: `Theme.of(context).colorScheme`
+- Typography: `Theme.of(context).textTheme`
+- No hardcoded color or text style values
 
 ## File Structure Best Practices
 
@@ -298,6 +375,10 @@ lib/apps/domain/auth/
 ├── services/
 │   ├── auth_service.dart
 │   └── auth_service.g.dart
+├── pages/
+│   └── login/
+│       ├── login_page.dart
+│       └── login_provider.dart
 └── components/
     └── auth_guard.dart  # Shared domain components
 ```
@@ -306,6 +387,7 @@ lib/apps/domain/auth/
 
 - **Models**: `{entity}_model.dart` - always end with `_model`
 - **Services**: `{domain}_service.dart` - always end with `_service`
+- **Pages**: `{page}_page.dart` - always end with `_page`
 - **Components**: `{name}_component.dart` or descriptive name
 - **Classes**: PascalCase with suffix (UserModel, AuthService)
 
@@ -319,9 +401,9 @@ import 'dart:async';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-// 3. Relative imports (domain layer)
-import '../models/user_model.dart';
-import '../../../infra/http/generated/rest_client.dart';
+// 3. Project imports (absolute paths only)
+import 'package:app/apps/domain/{domain}/models/{entity}_model.dart';
+import 'package:app/apps/infra/common/client/dio_provider.dart';
 
 // 4. Part files
 part 'auth_service.g.dart';
@@ -351,9 +433,10 @@ For working code examples:
 ### Service Checklist
 - [ ] `@riverpod` annotation
 - [ ] `extends _${Domain}Service`
-- [ ] RestClient via `ref.read(httpClientProvider).restClient`
+- [ ] Dio via `ref.watch(dioProvider)` or `ref.read(dioProvider)`
 - [ ] `AsyncValue.guard` for error handling
 - [ ] Part file: `.g.dart`
+- [ ] Absolute imports: `package:app/...`
 
 ### Code Generation
 ```bash
@@ -361,7 +444,7 @@ For working code examples:
 dart run swagger_parser && dart run build_runner build --delete-conflicting-outputs
 
 # Or step by step:
-dart run swagger_parser  # API clients from openapi.json
+dart run swagger_parser  # API clients from swagger/api_spec.json
 dart run build_runner build --delete-conflicting-outputs  # Freezed + Riverpod
 ```
 
@@ -372,7 +455,7 @@ dart run build_runner build --delete-conflicting-outputs  # Freezed + Riverpod
 - Check part directive matches filename
 
 **API client not found:**
-- Ensure `specs/openapi.json` exists
+- Ensure `swagger/api_spec.json` exists
 - Run `dart run swagger_parser`
 - Check `lib/apps/infra/http/generated/rest_client.dart`
 
@@ -381,4 +464,4 @@ dart run build_runner build --delete-conflicting-outputs  # Freezed + Riverpod
 - Use `.requireValue` to extract data from successful AsyncValue
 - Handle errors with `.when()` pattern
 
-Follow these patterns for consistent, maintainable Flutter DDD architecture aligned with si_taelimwon_app conventions.
+Follow these patterns for consistent, maintainable Flutter DDD architecture.

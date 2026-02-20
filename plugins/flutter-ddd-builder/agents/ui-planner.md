@@ -8,8 +8,9 @@ whenToUse: |
   orchestrator: "Spawn ui-planner to create ASCII art wireframes"
   system: "ui-planner agent generates screen layouts from PRD"
   </example>
+name: ui-planner
 model: sonnet
-color: purple
+color: magenta
 tools:
   - Read
   - Write
@@ -63,33 +64,33 @@ For each screen in PRD, create ASCII art layout.
 
 **Example - Login Screen**:
 ```
-┌─────────────────────────────┐
-│  [← 뒤로]      로그인        │
-├─────────────────────────────┤
-│                             │
-│  TextField (이메일)          │
-│    → controller: _email     │
-│    → textInputAction: next  │
-│                             │
-│  TextField (비밀번호)        │
-│    → controller: _password  │
-│    → obscureText: true      │
-│    → textInputAction: done  │
-│                             │
-│  Button (로그인)             │
-│    → onPressed: _handleLogin│
-│    → calls: auth.login()    │
-│                             │
-│  TextButton (회원가입)       │
-│    → navigate: /auth/register│
-└─────────────────────────────┘
++-----------------------------+
+|  [<- Back]      Login       |
++-----------------------------+
+|                             |
+|  TextField (Email)          |
+|    -> controller: _email    |
+|    -> textInputAction: next |
+|                             |
+|  TextField (Password)       |
+|    -> controller: _password |
+|    -> obscureText: true     |
+|    -> textInputAction: done |
+|                             |
+|  FilledButton (Login)       |
+|    -> onPressed: _handleLogin|
+|    -> calls: auth.login()   |
+|                             |
+|  TextButton (Sign Up)       |
+|    -> navigate: /auth/register|
++-----------------------------+
 ```
 
 **Include**:
 - Layout structure (boxes, sections)
-- Widget types (TextField, Button, ListView, etc.)
+- Widget types (TextField, FilledButton, OutlinedButton, ListView, Card, ListTile, etc.)
 - Service calls (auth.login(), post.getPosts())
-- Navigation (which routes)
+- Navigation (which routes via RouterClient)
 - Data bindings (controllers, states)
 
 ### 3. Generate Outputs
@@ -100,24 +101,28 @@ For each screen in PRD, create ASCII art layout.
   "screens": [
     {
       "name": "login",
-      "path": "/auth/login",
+      "path": "/login",
+      "domain": "auth",
+      "page_dir": "login",
       "services": ["auth.AuthService"],
-      "components": ["TextField", "Button"],
+      "components": ["TextField", "FilledButton"],
       "description": "User authentication login screen",
       "navigation": {
-        "success": "/home",
-        "register": "/auth/register"
+        "success": "/posts",
+        "register": "/register"
       }
     },
     {
-      "name": "home",
-      "path": "/home",
+      "name": "post-list",
+      "path": "/posts",
+      "domain": "post",
+      "page_dir": "list",
       "services": ["post.PostService", "auth.AuthService"],
       "components": ["ListView", "Card", "FloatingActionButton"],
       "description": "Main feed showing posts",
       "navigation": {
-        "postDetail": "/post/:id",
-        "createPost": "/post/create"
+        "postDetail": "/posts/:id",
+        "createPost": "/posts/create"
       }
     }
   ]
@@ -128,27 +133,28 @@ For each screen in PRD, create ASCII art layout.
 ```markdown
 # Screen Layouts
 
-## 1. 로그인 화면
-경로: `/auth/login`
-서비스: auth.AuthService
+## 1. Login Screen
+Domain: auth
+Page: lib/apps/domain/auth/pages/login/login_page.dart
+Services: auth.AuthService
 
 ### Layout
 {ASCII art from above}
 
 ### Components
-- TextField (이메일): textInputAction.next → 다음 필드로
-- TextField (비밀번호): textInputAction.done → 로그인 실행
-- Button (로그인): auth.login() 호출, 성공 시 /home 이동
-- TextButton (회원가입): /auth/register 이동
+- TextField (Email): textInputAction.next
+- TextField (Password): textInputAction.done -> login
+- FilledButton (Login): auth.login(), success -> /posts
+- TextButton (Sign Up): navigate /register
 
 ### State
 - _emailController: TextEditingController
 - _passwordController: TextEditingController
-- _isLoading: bool (로딩 중 표시)
+- _isLoading: bool
 
 ---
 
-## 2. 홈 피드 화면
+## 2. Post List Screen
 {Repeat for each screen}
 ```
 
@@ -160,12 +166,18 @@ Use Write tool to create:
 
 ## Design Principles
 
-Follow si_taelimwon_app conventions:
+Follow project conventions:
 
-**Minimalism**:
+**MUI Component Based Minimalism**:
+- Use Material 3 built-in components first: `FilledButton`, `OutlinedButton`, `Card`, `ListTile`, `AppBar`, `TextField`, etc.
+- Minimize custom widgets — leverage Material Design components
 - Text-first, icons only when functional
 - No unnecessary decorations
 - Clean spacing
+
+**Lucide Icons**:
+- Use `LucideIcons.*` from `package:lucide_icons` instead of `Icons.*`
+- Only use `Icons.*` for Material-specific icons not available in Lucide
 
 **Keyboard UX**:
 - SingleChildScrollView for forms
@@ -181,6 +193,14 @@ Follow si_taelimwon_app conventions:
 - Theme.of(context).textTheme for text
 - No hardcoded values
 
+**Page Location**:
+- Pages are at `lib/apps/domain/{domain}/pages/{page}/{page}_page.dart`
+- Not at `lib/apps/ui/pages/`
+
+**Navigation**:
+- Use `RouterClient.{route}.go(context)` or `.push(context)` pattern
+- Not `context.push('/path')` directly
+
 ## Success Criteria
 
 - [ ] All screens from PRD included
@@ -188,5 +208,6 @@ Follow si_taelimwon_app conventions:
 - [ ] Services mapped correctly
 - [ ] Navigation flows defined
 - [ ] JSON and Markdown files created
+- [ ] Page locations use domain-based paths
 
 Generate comprehensive, implementable screen plans!
