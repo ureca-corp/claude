@@ -37,7 +37,7 @@ class AuthService extends _$AuthService {
 
   /// Get current user profile
   Future<UserModel> getCurrentUser() async {
-    final dio = ref.watch(dioProvider);
+    final dio = ref.read(dioProvider);
     return await AsyncValue.guard(() async {
       final response = await dio.get('/api/auth/me');
       return UserModel.fromJson(response.data);

@@ -14,7 +14,7 @@ part '{domain}_service.g.dart';
 class PostService extends _$PostService {
   @override
   FutureOr<List<PostModel>> build() async {
-    final dio = ref.watch(dioProvider);
+    final dio = ref.read(dioProvider);
     final response = await dio.get('/api/posts');
     return (response.data as List)
         .map((json) => PostModel.fromJson(json))
@@ -33,8 +33,8 @@ class PostService extends _$PostService {
 
 - Use `@riverpod` (lowercase) annotation
 - Class extends `_$ClassName` (generated)
-- Use `ref.watch(dioProvider)` for reads (reactive)
-- Use `ref.read(dioProvider)` for mutations (one-time)
+- Use `ref.read(dioProvider)` in helper/action methods (build 밖)
+- `ref.watch` only directly in `build()` body (reactive rebuild 필요 시)
 - Wrap with `AsyncValue.guard` for error handling
 - Call `ref.invalidateSelf()` to refresh after mutations
 
@@ -48,7 +48,7 @@ String greeting(Ref ref) => 'Hello';
 // Async provider with parameter
 @riverpod
 Future<PostModel> postDetail(Ref ref, String id) async {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.read(dioProvider);
   final response = await dio.get('/api/posts/$id');
   return PostModel.fromJson(response.data);
 }
@@ -84,9 +84,9 @@ postAsync.when(
   error: (error, stack) => Text('Error: $error'),
 );
 
-// In service
+// In service (helper method → ref.read)
 Future<UserModel> getUser(String id) async {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.read(dioProvider);
   return await AsyncValue.guard(() async {
     final response = await dio.get('/api/users/$id');
     return UserModel.fromJson(response.data);
@@ -98,15 +98,15 @@ Future<UserModel> getUser(String id) async {
 
 | Method | Use When | Reactivity |
 |--------|----------|------------|
-| `ref.watch` | In `build()`, reading data providers | Rebuilds on change |
-| `ref.read` | In callbacks, mutations, one-time access | No rebuild |
+| `ref.watch` | Directly in `build()` body only | Rebuilds on change |
+| `ref.read` | Helper methods, action methods, callbacks | No rebuild (one-time) |
 
 ### Family Providers (Parameters)
 
 ```dart
 @riverpod
 Future<PostModel> postById(Ref ref, String id) async {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.read(dioProvider);
   final response = await dio.get('/api/posts/$id');
   return PostModel.fromJson(response.data);
 }

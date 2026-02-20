@@ -17,7 +17,7 @@ part 'post_provider.g.dart';
 class PostList extends _$PostList {
   @override
   FutureOr<List<PostModel>> build() async {
-    final dio = ref.watch(dioProvider);
+    final dio = ref.read(dioProvider);
     final response = await dio.get('/api/posts');
     return (response.data as List)
         .map((json) => PostModel.fromJson(json))
@@ -88,7 +88,7 @@ class PostList extends _$PostList {
   }
 
   Future<List<PostModel>> _fetchPage(int page) async {
-    final dio = ref.watch(dioProvider);
+    final dio = ref.read(dioProvider);
     final response = await dio.get('/api/posts', queryParameters: {
       'page': page,
       'limit': 20,
@@ -113,6 +113,6 @@ class PostList extends _$PostList {
 
 1. **Always use absolute imports**: `package:app/apps/...`
 2. **No Repository pattern**: Dio is called directly
-3. **ref.watch for reads, ref.read for mutations**
+3. **ref.read in helper/action methods** (ref.watch only directly in build() body)
 4. **AsyncValue.guard for error handling**
 5. **ref.invalidateSelf() to refresh data after mutations**
