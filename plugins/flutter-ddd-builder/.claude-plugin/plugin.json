@@ -1,6 +1,6 @@
 {
   "name": "flutter-ddd-builder",
-  "version": "0.2.0",
+  "version": "0.0.2",
   "description": "Domain Book 기반 Flutter DDD 아키텍처 코드 자동 생성 플러그인. 비즈니스 로직과 UI를 병렬 팀 작업으로 구축하고 실시간 품질 검증을 제공합니다.",
   "author": {
     "name": "Andy",
