@@ -1,0 +1,9 @@
+{
+  "name": "project-starter",
+  "description": "Template repo 기반 새 프로젝트 scaffolding - gh CLI로 Flutter/FastAPI/Admin repo 자동 생성",
+  "version": "1.0.0",
+  "author": {
+    "name": "URECA Team",
+    "url": "https://github.com/ureca-corp"
+  }
+}
