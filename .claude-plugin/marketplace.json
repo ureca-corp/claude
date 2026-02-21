@@ -10,81 +10,48 @@
     "description": "도메인 주도 설계 및 AI 기반 개발 도구 모음",
     "version": "1.0.0",
     "pluginRoot": "./plugins",
-    "license": "MIT",
-    "keywords": [
-      "domain-driven-design",
-      "ddd",
-      "product-planning",
-      "documentation",
-      "ai-assisted"
-    ]
+    "license": "MIT"
   },
   "plugins": [
     {
-      "name": "domain-book-builder",
-      "source": "./plugins/domain-book-builder",
-      "description": "기술 독립적 Domain Book 생성 - 완벽한 도메인 설계서 집필",
+      "name": "project-starter",
+      "source": "./plugins/project-starter",
+      "description": "Template repo 기반 새 프로젝트 생성",
       "version": "1.0.0",
       "author": {
-        "name": "URECA Team",
+        "name": "ureca",
         "url": "https://github.com/ureca-corp"
-      },
-      "keywords": [
-        "domain-driven-design",
-        "product-planning",
-        "ubiquitous-language"
-      ],
-      "category": "planning"
+      }
+    },
+    {
+      "name": "domain-book-builder",
+      "source": "./plugins/domain-book-builder",
+      "description": "기술 독립적 Domain Book 생성",
+      "version": "1.0.0",
+      "author": {
+        "name": "ureca",
+        "url": "https://github.com/ureca-corp"
+      }
     },
     {
       "name": "python-fastapi-programmer",
       "source": "./plugins/python-fastapi-programmer",
-      "description": "Domain Book 기반 FastAPI 프로젝트 자동 생성 - 병렬 코드 생성 및 품질 보증",
+      "description": "Domain Book 기반 백엔드 코드 생성",
       "version": "1.0.0",
       "author": {
-        "name": "URECA Team",
+        "name": "ureca",
         "url": "https://github.com/ureca-corp"
-      },
-      "keywords": [
-        "fastapi",
-        "backend",
-        "code-generation",
-        "domain-driven-design",
-        "clean-architecture"
-      ],
-      "category": "backend"
+      }
     },
     {
       "name": "flutter-ddd-builder",
       "source": "./plugins/flutter-ddd-builder",
-      "description": "Flutter DDD 프로젝트 생성",
+      "description": "Domain Book 기반 Flutter 코드 생성",
       "version": "1.0.0",
       "author": {
-        "name": "URECA Team",
+        "name": "ureca",
         "url": "https://github.com/ureca-corp"
-      },
-      "keywords": [
-        "flutter",
-        "ddd",
-        "builder"
-      ],
-      "category": "development"
-    },
-    {
-      "name": "project-starter",
-      "source": "./plugins/project-starter",
-      "description": "Template repo 기반 새 프로젝트 scaffolding - gh CLI로 Flutter/FastAPI/Admin repo 자동 생성",
-      "version": "1.0.0",
-      "author": {
-        "name": "URECA Team",
-        "url": "https://github.com/ureca-corp"
-      },
-      "keywords": [
-        "scaffolding",
-        "template",
-        "project-setup"
-      ],
-      "category": "tooling"
+      }
     }
   ]
 }
