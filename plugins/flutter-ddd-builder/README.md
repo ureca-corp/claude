@@ -9,7 +9,7 @@
 ## ✨ Features
 
 - **🔄 도메인 → 코드 자동 변환**: Domain Book을 읽고 Freezed 모델, Riverpod 서비스, API 클라이언트 자동 생성
-- **🎨 화면 기획 자동 생성**: PRD 기반 ASCII art 화면 기획 후 UI 코드 생성
+- **🎨 화면 기획 자동 생성**: Domain Book features (📱 화면 구성) 기반 ASCII art 화면 기획 후 UI 코드 생성
 - **👥 팀 기반 병렬 처리**: Git worktree + 에이전트 팀으로 여러 도메인/화면 동시 구현
 - **✅ 실시간 품질 검증**: 파일 작성 후 즉시 `flutter analyze`, 통합 전 `flutter build` 검증
 - **🔗 기존 인프라 활용**: `swagger_parser` + Freezed 3.x + Riverpod 3.x
@@ -48,13 +48,27 @@ cc  # Claude Code 실행
    └── post/
        └── ...
    ```
-3. **PRD 문서**: `ai-context/PRD.md` (UI 생성 시 필요)
-4. **Git 저장소**: 프로젝트가 git으로 관리되어야 함
+3. **Git 저장소**: 프로젝트가 git으로 관리되어야 함
 
-### 선택 사항
+### 선택 사항 (API 클라이언트 자동 생성)
 
-- `swagger_parser.yaml` 설정 (OpenAPI 기반 API 클라이언트 생성 시)
-- `swagger/api_spec.json` (API 스펙이 있는 경우)
+`swagger_parser.yaml`에서 OpenAPI 스펙 소스를 설정합니다 (둘 중 하나 선택):
+
+```yaml
+swagger_parser:
+  # 방법 1 (추천): 실행 중인 백엔드에서 직접 가져오기
+  schema_url: http://localhost:8000/openapi.json
+
+  # 방법 2: 정적 파일 사용
+  # schema_path: swagger/api_spec.json
+
+  output_directory: lib/generated/api
+  json_serializer: freezed
+  use_freezed3: true
+  language: dart
+```
+
+> **Note**: `schema_url` 사용 시 python-fastapi-programmer로 생성된 백엔드 서버가 실행 중이어야 합니다 (`uvicorn main:app --reload`)
 
 ## 🎯 Usage
 
@@ -112,14 +126,10 @@ Domain Book을 읽고 도메인 레이어를 자동 생성합니다.
 
 ### `/ui` - UI 레이어 생성
 
-PRD와 Domain Book API 명세를 읽고 화면을 자동 생성합니다.
+Domain Book features (📱 화면 구성)와 API 명세를 읽고 화면을 자동 생성합니다.
 
 ```bash
-# 기본 경로 사용 (ai-context/PRD.md)
 /ui
-
-# 커스텀 경로 지정
-/ui --prd-path custom-path/requirements.md
 ```
 
 **생성되는 코드:**
@@ -131,7 +141,7 @@ PRD와 Domain Book API 명세를 읽고 화면을 자동 생성합니다.
 - `lib/apps/ui/router/domains/{domain}.dart` - Route 클래스
 
 **워크플로우:**
-1. PRD + Domain Book API 읽기
+1. Domain Book features (📱 화면 구성) + API 읽기
 2. ASCII art 화면 기획 생성 → 터미널 출력 + `ai-context/screen-plan.md` 저장
 3. 사용자 승인 (수정 요청 가능)
 4. 에이전트 팀 생성 + Git worktree 분리
@@ -149,7 +159,7 @@ PRD와 Domain Book API 명세를 읽고 화면을 자동 생성합니다.
 
 ## 경로 설정
 - domain_book_path: ai-context/domain-books/
-- prd_path: ai-context/PRD.md
+- domain_book_features: ai-context/domain-books/*/features.md
 - screen_plan_path: ai-context/screen-plan.md
 
 ## Git 설정
@@ -184,15 +194,13 @@ EOF
 ### 전체 프로세스
 
 ```
-1. Domain Book 작성 (domain-book-builder 사용)
+1. Domain Book 작성 (domain-book-builder 사용, 📱 화면 구성 포함)
    ↓
 2. /logic 실행 → 비즈니스 로직 레이어 생성
    ↓
-3. PRD 작성
+3. /ui 실행 → UI 레이어 생성
    ↓
-4. /ui 실행 → UI 레이어 생성
-   ↓
-5. 완성! 🎉
+4. 완성! 🎉
 ```
 
 ### 팀 기반 병렬 처리

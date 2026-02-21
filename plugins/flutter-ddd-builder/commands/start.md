@@ -46,8 +46,22 @@ flutter --version
 
 # Check required files/directories
 ls ai-context/domain-books/   # Domain Book must exist
-ls swagger/api_spec.json       # Optional: OpenAPI spec
-ls ai-context/PRD.md           # Required for UI generation
+
+# Check OpenAPI spec availability (swagger_parser용)
+# 방법 1: swagger_parser.yaml에 schema_url 설정 (백엔드 서버 실행 필요)
+# 방법 2: swagger/api_spec.json 정적 파일 (오프라인 가능)
+if [ -f swagger_parser.yaml ]; then
+  echo "swagger_parser.yaml found"
+  # schema_url이 설정되어 있으면 백엔드 서버 접근 가능 여부 확인
+  if grep -q "schema_url" swagger_parser.yaml; then
+    SCHEMA_URL=$(grep "schema_url" swagger_parser.yaml | awk '{print $2}')
+    curl -s --max-time 3 "$SCHEMA_URL" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo "⚠️ Backend server not reachable at $SCHEMA_URL"
+      echo "   Start the server: uvicorn main:app --reload"
+    fi
+  fi
+fi
 ```
 
 **Validation checklist:**
@@ -55,8 +69,8 @@ ls ai-context/PRD.md           # Required for UI generation
 | Requirement | Required For | Check |
 |-------------|-------------|-------|
 | `ai-context/domain-books/` with at least 1 domain | Logic + UI | Must exist |
-| `swagger/api_spec.json` | API client generation | Optional |
-| `ai-context/PRD.md` | UI generation | Required unless --skip-ui |
+| `swagger_parser.yaml` with `schema_url` 또는 `swagger/api_spec.json` | API client generation | 둘 중 하나 (Optional) |
+| Backend server running (if `schema_url` used) | API client generation | `curl` reachable |
 | `pubspec.yaml` | All | Must exist |
 | Git repository | Worktree management | Must be initialized |
 | `lib/global/types/paginated_response.dart` | Logic | Should exist (boilerplate) |
@@ -83,16 +97,16 @@ Display error:
 Stop execution.
 ```
 
-**If PRD is missing and --skip-ui not set:**
+**If features.md missing 📱 화면 구성 section and --skip-ui not set:**
 ```
 AskUserQuestion({
   questions: [{
-    question: "PRD (ai-context/PRD.md) not found. How would you like to proceed?",
-    header: "Missing PRD",
+    question: "Domain Book features.md에 📱 화면 구성 섹션이 없습니다. 어떻게 진행할까요?",
+    header: "화면 구성 없음",
     multiSelect: false,
     options: [
       {label: "Skip UI generation", description: "Generate only business logic layer"},
-      {label: "Create PRD first", description: "I'll stop so you can create ai-context/PRD.md"}
+      {label: "Add screen section first", description: "I'll stop so you can add 📱 화면 구성 to features.md"}
     ]
   }]
 })
@@ -166,14 +180,38 @@ Run swagger_parser and build_runner to prepare infrastructure code.
 
 ```bash
 # Step 3a: Generate API clients from OpenAPI spec
-if [ -f swagger/api_spec.json ]; then
+# swagger_parser.yaml 설정에 따라 schema_url(런타임) 또는 schema_path(정적 파일) 사용
+if [ -f swagger_parser.yaml ]; then
   echo "Step 3/8: Generating API clients from OpenAPI spec..."
+
+  # schema_url 방식이면 백엔드 서버 접근 가능 여부 재확인
+  if grep -q "schema_url" swagger_parser.yaml; then
+    SCHEMA_URL=$(grep "schema_url" swagger_parser.yaml | awk '{print $2}')
+    if ! curl -s --max-time 5 "$SCHEMA_URL" > /dev/null 2>&1; then
+      echo "⚠️ Backend server not reachable at $SCHEMA_URL"
+      AskUserQuestion({
+        questions: [{
+          question: "Backend server가 응답하지 않습니다. API client 생성을 어떻게 할까요?",
+          header: "서버 미응답",
+          multiSelect: false,
+          options: [
+            {label: "서버 시작 후 재시도", description: "uvicorn main:app --reload 실행 후 계속"},
+            {label: "건너뛰기", description: "API client 없이 진행 (수동 생성 필요)"}
+          ]
+        }]
+      })
+    fi
+  fi
+
   dart run swagger_parser
 
   if [ $? -ne 0 ]; then
     echo "swagger_parser failed, retrying..."
     dart run swagger_parser
   fi
+elif [ -f swagger/api_spec.json ]; then
+  echo "Step 3/8: Generating API clients from static OpenAPI spec..."
+  dart run swagger_parser
 fi
 
 # Step 3b: Run build_runner for existing code
@@ -268,7 +306,7 @@ Otherwise, execute the same workflow as `/ui` command:
 
 **6a. Screen Plan Generation:**
 - Spawn ui-planner agent
-- Read PRD + Domain Book APIs
+- Read Domain Book features (📱 화면 구성) + APIs
 - Generate ASCII art wireframes
 - Create `ai-context/screen-plan.json` and `ai-context/screen-layouts.md`
 
@@ -457,7 +495,7 @@ Load these skills automatically:
 ## Success Criteria
 
 - [ ] All domains from Domain Book implemented
-- [ ] All screens from PRD implemented (unless --skip-ui)
+- [ ] All screens from Domain Book features implemented (unless --skip-ui)
 - [ ] Router fully configured
 - [ ] flutter analyze: no issues
 - [ ] flutter build: success (appbundle + ios)

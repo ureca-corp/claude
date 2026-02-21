@@ -135,8 +135,19 @@ git worktree list
 **Execute once before spawning teammates:**
 
 ```bash
-# Generate API clients if swagger spec exists
-if [ -f swagger/api_spec.json ]; then
+# Generate API clients from OpenAPI spec
+# swagger_parser.yaml의 schema_url(런타임 엔드포인트) 또는 schema_path(정적 파일) 사용
+if [ -f swagger_parser.yaml ]; then
+  # schema_url 방식이면 백엔드 서버 접근 가능 여부 확인
+  if grep -q "schema_url" swagger_parser.yaml; then
+    SCHEMA_URL=$(grep "schema_url" swagger_parser.yaml | awk '{print $2}')
+    if ! curl -s --max-time 5 "$SCHEMA_URL" > /dev/null 2>&1; then
+      echo "⚠️ Backend server not reachable at $SCHEMA_URL"
+      echo "   Start the server first: uvicorn main:app --reload"
+    fi
+  fi
+  dart run swagger_parser
+elif [ -f swagger/api_spec.json ]; then
   dart run swagger_parser
 fi
 
