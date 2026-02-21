@@ -8,7 +8,7 @@
 
 **도메인 주도 설계 및 AI 기반 개발 도구 모음**
 
-[설치하기](#-설치-방법) · [플러그인 목록](#-플러그인) · [개발 가이드](#-개발-가이드) · [기여하기](./CONTRIBUTING.md)
+[설치하기](#-설치-방법) · [플러그인 목록](#-플러그인) · [기여하기](./CONTRIBUTING.md)
 
 </div>
 
@@ -16,50 +16,36 @@
 
 ## 📖 소개
 
-URECA Claude Plugins는 제품 기획부터 개발까지 전 과정을 지원하는 **Claude Code 플러그인 마켓플레이스**입니다. 도메인 주도 설계(DDD) 철학을 기반으로 고품질 소프트웨어 개발을 돕습니다.
+제품 기획부터 개발까지 전 과정을 지원하는 **Claude Code 플러그인 마켓플레이스**입니다.
 
-### 🎯 핵심 가치
+```mermaid
+flowchart LR
+    A["🏗️ Domain Book Builder<br/><i>도메인 설계서 생성</i>"]
+    B["ai-context/domain-books/{domain}/"]
+    C["⚡ Python FastAPI Programmer<br/><i>백엔드 코드 생성</i>"]
+    D["📱 Flutter DDD Builder<br/><i>프론트엔드 코드 생성</i>"]
 
-- **기술 독립성**: 특정 기술 스택에 종속되지 않는 순수 도메인 설계
-- **점진적 개선**: 단계별 승인 기반 워크플로우로 품질 보장
-- **AI 협업**: Claude와 함께하는 효율적인 문서화 및 설계
+    A -->|출력| B
+    B -->|입력| C
+    B -->|입력| D
+```
 
 ---
 
 ## 🚀 설치 방법
 
-### 전제 조건
-
-- [Claude Code CLI](https://code.claude.com) 설치 완료
-- Git 설치 완료
-
-### 1단계: 마켓플레이스 추가
-
-Claude Code에서 다음 명령어를 실행하세요:
-
 ```bash
+# 1. 마켓플레이스 추가
 /plugin marketplace add https://github.com/ureca-corp/claude
-```
 
-또는 로컬 개발 환경에서:
-
-```bash
-/plugin marketplace add /path/to/claude
-```
-
-### 2단계: 플러그인 설치
-
-```bash
+# 2. 원하는 플러그인 설치
 /plugin install domain-book-builder@ureca-plugins
-```
+/plugin install python-fastapi-programmer@ureca-plugins
+/plugin install flutter-ddd-builder@ureca-plugins
 
-### 3단계: 설치 확인
-
-```bash
+# 3. 설치 확인
 /plugin list
 ```
-
-설치된 플러그인 목록에 `domain-book-builder`가 표시되면 성공입니다!
 
 ---
 
@@ -67,227 +53,98 @@ Claude Code에서 다음 명령어를 실행하세요:
 
 ### Domain Book Builder
 
-<table>
-<tr>
-<td width="60%">
+기술 독립적 도메인 설계 문서를 생성합니다. 5단계 점진적 워크플로우로 누구나 읽을 수 있는 "기획서"를 작성합니다.
 
-**기술 독립적 Domain Book 생성**
-
-제품 기획 단계에서 기술 스택과 완전히 독립적인 순수 도메인 설계 문서를 생성합니다. 코드를 생성하지 않고, 대신 훌륭한 "기획서"를 작성합니다.
-
-**설치:**
-```bash
-/plugin install domain-book-builder@ureca-plugins
-```
-
-**사용:**
 ```bash
 /domain-book-builder:start
 ```
 
-</td>
-<td width="40%">
+출력: `ai-context/domain-books/{domain}/` (README, features, domain-model, api-spec, business-rules)
 
-**✨ 특징**
+[📚 상세 문서](./plugins/domain-book-builder/README.md)
 
-✅ 기술 용어 0개
-✅ 누구나 읽고 이해 가능
-✅ 백엔드/플러터/웹 어디든 적용
-✅ 5단계 점진적 워크플로우
-✅ 도메인 의존성 자동 해결
+### Python FastAPI Programmer
 
-**📂 출력**
-```
-ai-context/domain-books/{domain}/
-├── README.md
-├── features.md
-├── domain-model.md
-├── api-spec.md
-└── business-rules.md
+Domain Book을 읽어 FastAPI 백엔드를 자동 생성합니다. Git Worktree 병렬 코드 생성, Vertical Slice + Clean Architecture, JWT 인증, PostGIS 지원.
+
+```bash
+/python-fastapi-programmer:start
 ```
 
-</td>
-</tr>
-</table>
+출력: `src/modules/{domain}/` (_models.py, {action}.py, router.py)
 
-[📚 상세 문서 보기](./plugins/domain-book-builder/README.md)
+[📚 상세 문서](./plugins/python-fastapi-programmer/README.md)
+
+### Flutter DDD Builder
+
+Domain Book을 읽어 Flutter DDD 앱을 생성합니다. Freezed 3.x + Riverpod 3.x, 비즈니스 로직/UI 분리 생성, ASCII 와이어프레임 승인 후 UI 구현.
+
+```bash
+/flutter-ddd-builder:start
+```
+
+출력: `lib/{domain}/` (models, services, pages)
+
+[📚 상세 문서](./plugins/flutter-ddd-builder/README.md)
 
 ---
 
 ## 🛠️ 개발 가이드
 
-### 로컬 테스트
-
-플러그인을 개발하거나 수정할 때 `--plugin-dir` 플래그를 사용하여 로컬에서 테스트할 수 있습니다:
+### 로컬 테스트 및 검증
 
 ```bash
-# 전체 마켓플레이스 로드
+# 전체 마켓플레이스 로드 테스트
 claude --plugin-dir .
 
-# 특정 플러그인만 로드
-claude --plugin-dir ./plugins/domain-book-builder
-```
-
-### 플러그인 검증
-
-마켓플레이스 구조와 플러그인 무결성을 검증:
-
-```bash
+# 플러그인 구조 검증
 claude plugin validate .
-```
 
-특정 플러그인만 검증:
-
-```bash
-claude plugin validate plugins/domain-book-builder
+# 전체 검증 스크립트 (jq 필요)
+./scripts/validate-all.sh
 ```
 
 ### 새 플러그인 추가
 
-1. **플러그인 디렉토리 생성**
-   ```bash
-   mkdir -p plugins/your-plugin/.claude-plugin
-   ```
+1. `plugins/your-plugin/.claude-plugin/plugin.json` 생성 (name, version, description)
+2. `skills/`, `commands/`, `agents/`, `hooks/` 중 필요한 디렉토리를 **플러그인 루트**에 추가
+3. `.claude-plugin/marketplace.json`의 `plugins` 배열에 등록
+4. `claude plugin validate .`로 검증
 
-2. **플러그인 구조 설정**
-   ```
-   plugins/your-plugin/
-   ├── .claude-plugin/
-   │   └── plugin.json       # 플러그인 메타데이터
-   ├── skills/               # 에이전트 스킬 (자동 호출)
-   ├── commands/             # 사용자 명령어 (/plugin:command)
-   ├── agents/               # 커스텀 에이전트
-   ├── hooks/                # 이벤트 훅
-   ├── README.md             # 플러그인 문서
-   └── CHANGELOG.md          # 버전 변경 이력
-   ```
-
-3. **마켓플레이스에 등록**
-
-   `.claude-plugin/marketplace.json`의 `plugins` 배열에 추가:
-   ```json
-   {
-     "name": "your-plugin",
-     "source": "./plugins/your-plugin",
-     "description": "플러그인 설명",
-     "version": "1.0.0",
-     "author": {
-       "name": "Your Name"
-     },
-     "category": "category-name"
-   }
-   ```
-
-4. **검증 및 테스트**
-   ```bash
-   claude plugin validate .
-   claude --plugin-dir ./plugins/your-plugin
-   ```
+> **주의**: 컴포넌트 디렉토리는 `.claude-plugin/` 안이 아닌 플러그인 루트에 위치해야 합니다.
 
 ---
 
 ## 📚 문서
 
-### 사용자 문서
-- [설치 가이드](./docs/installation.md) - 상세 설치 및 설정 방법
-- [문제 해결](./docs/troubleshooting.md) - 일반적인 문제와 해결 방법
-
-### 개발자 문서
-- [플러그인 개발](./docs/plugin-development.md) - 플러그인 생성 가이드
-- [기여 가이드](./CONTRIBUTING.md) - PR 제출 및 코드 스타일
-- [변경 이력](./CHANGELOG.md) - 버전별 변경 사항
-
-### 공식 레퍼런스
-- [Claude Code 플러그인 가이드](https://code.claude.com/docs/en/plugins)
-- [플러그인 마켓플레이스](https://code.claude.com/docs/en/plugin-marketplaces)
-- [플러그인 레퍼런스](https://code.claude.com/docs/en/plugins-reference)
+| 문서 | 설명 |
+|------|------|
+| [설치 가이드](./docs/installation.md) | 상세 설치 및 설정 |
+| [플러그인 개발](./docs/plugin-development.md) | 플러그인 생성 가이드 |
+| [문제 해결](./docs/troubleshooting.md) | 일반적인 문제와 해결 |
+| [기여 가이드](./CONTRIBUTING.md) | PR 제출 및 코드 스타일 |
+| [변경 이력](./CHANGELOG.md) | 버전별 변경 사항 |
+| [보안](./SECURITY.md) | 취약점 보고 절차 |
 
 ---
 
 ## 🤝 기여하기
 
-플러그인 개발에 참여하고 싶으신가요? [CONTRIBUTING.md](./CONTRIBUTING.md)를 확인해주세요!
-
-### 빠른 시작
-
-1. Fork & Clone
-   ```bash
-   git clone https://github.com/your-username/claude.git
-   cd claude
-   ```
-
-2. 로컬 테스트
-   ```bash
-   claude --plugin-dir .
-   ```
-
-3. 변경 후 검증
-   ```bash
-   ./scripts/validate-all.sh
-   ```
-
-4. PR 제출
-   ```bash
-   git push origin feature/your-feature
-   # GitHub에서 Pull Request 생성
-   ```
-
----
-
-## 📊 프로젝트 구조
-
-```
-claude/
-├── .github/
-│   └── workflows/         # CI/CD 워크플로우
-├── .claude-plugin/
-│   └── marketplace.json   # 마켓플레이스 카탈로그
-├── plugins/               # 플러그인 컬렉션
-│   └── domain-book-builder/
-├── docs/                  # 상세 문서
-├── scripts/               # 유틸리티 스크립트
-├── CHANGELOG.md           # 변경 이력
-├── CLAUDE.md              # AI 에이전트 가이드
-├── CONTRIBUTING.md        # 기여 가이드
-├── LICENSE                # MIT 라이선스
-└── README.md              # 이 파일
+```bash
+git clone https://github.com/your-username/claude.git
+cd claude
+claude --plugin-dir .            # 로컬 테스트
+./scripts/validate-all.sh        # 검증
+git push origin feature/your-feature  # PR 제출
 ```
 
----
-
-## 🔐 보안
-
-보안 취약점을 발견하셨나요? [SECURITY.md](./SECURITY.md)를 참조하여 책임감 있게 보고해주세요.
+자세한 내용은 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참조하세요.
 
 ---
 
 ## 📄 라이선스
 
-이 프로젝트는 [MIT License](./LICENSE) 하에 배포됩니다.
-
-```
-MIT License
-
-Copyright (c) 2026 URECA Team
-
-자유롭게 사용, 수정, 배포 가능합니다.
-```
-
----
-
-## 🌟 Star History
-
-이 프로젝트가 유용하다면 ⭐️을 눌러주세요!
-
----
-
-## 📞 연락처
-
-- **이슈 제보**: [GitHub Issues](https://github.com/ureca-corp/claude/issues)
-- **토론**: [GitHub Discussions](https://github.com/ureca-corp/claude/discussions)
-- **이메일**: support@ureca.team (플레이스홀더)
-
----
+[MIT License](./LICENSE) - Copyright (c) 2026 URECA Team
 
 <div align="center">
 
