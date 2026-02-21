@@ -20,11 +20,13 @@
 
 ```mermaid
 flowchart LR
+    S["🚀 Project Starter<br/><i>프로젝트 scaffolding</i>"]
     A["🏗️ Domain Book Builder<br/><i>도메인 설계서 생성</i>"]
-    B["ai-context/domain-books/{domain}/"]
-    C["⚡ Python FastAPI Programmer<br/><i>백엔드 코드 생성</i>"]
-    D["📱 Flutter DDD Builder<br/><i>프론트엔드 코드 생성</i>"]
+    B["domain/{domain}/"]
+    C["⚡ Python FastAPI Programmer<br/><i>백엔드 코드 생성 → be/</i>"]
+    D["📱 Flutter DDD Builder<br/><i>프론트엔드 코드 생성 → app/</i>"]
 
+    S -->|프로젝트 생성| A
     A -->|출력| B
     B -->|입력| C
     B -->|입력| D
@@ -39,6 +41,7 @@ flowchart LR
 /plugin marketplace add https://github.com/ureca-corp/claude
 
 # 2. 원하는 플러그인 설치
+/plugin install project-starter@ureca-plugins
 /plugin install domain-book-builder@ureca-plugins
 /plugin install python-fastapi-programmer@ureca-plugins
 /plugin install flutter-ddd-builder@ureca-plugins
@@ -50,6 +53,18 @@ flowchart LR
 ---
 
 ## 🔌 플러그인
+
+### Project Starter
+
+Template repo 기반으로 새 프로젝트를 자동 생성합니다. `gh` CLI로 Flutter/FastAPI/Admin repo를 생성하고 하나의 디렉토리에 구성합니다.
+
+```bash
+/project-starter:new-project my-project
+```
+
+출력: `my-project/{app/, be/, admin/, domain/}`
+
+[📚 상세 문서](./plugins/project-starter/README.md)
 
 ### Domain Book Builder
 

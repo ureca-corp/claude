@@ -34,7 +34,7 @@ Conventional Commits 사용:
 ```
 
 - **type**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-- **scope**: 플러그인 이름 (`domain-book-builder`, `python-fastapi-programmer`, `flutter-ddd-builder`) 또는 `marketplace`, `ci`, `docs`
+- **scope**: 플러그인 이름 (`project-starter`, `domain-book-builder`, `python-fastapi-programmer`, `flutter-ddd-builder`) 또는 `marketplace`, `ci`, `docs`
 - **subject**: 현재 시제, 첫 글자 소문자, 마침표 없음, 50자 이내
 
 ## 아키텍처
@@ -46,9 +46,10 @@ claude/
 ├── .claude-plugin/
 │   └── marketplace.json     # 마켓플레이스 카탈로그 (모든 플러그인 등록)
 ├── plugins/                 # 플러그인 컬렉션
-│   ├── domain-book-builder/       # Phase 1: 도메인 설계서 생성
-│   ├── python-fastapi-programmer/ # Phase 2: FastAPI 백엔드 코드 생성
-│   └── flutter-ddd-builder/       # Phase 3: Flutter 앱 코드 생성
+│   ├── project-starter/           # 프로젝트 scaffolding (template repo 기반)
+│   ├── domain-book-builder/       # 도메인 설계서 생성
+│   ├── python-fastapi-programmer/ # FastAPI 백엔드 코드 생성
+│   └── flutter-ddd-builder/       # Flutter 앱 코드 생성
 ├── scripts/
 │   └── validate-all.sh      # 전체 플러그인 구조 검증 스크립트
 └── docs/                    # 설치, 개발, 트러블슈팅 문서
@@ -73,14 +74,27 @@ plugins/{plugin-name}/
 
 ```mermaid
 flowchart LR
-    A[domain-book-builder] -->|출력| B["ai-context/domain-books/{domain}/"]
-    B -->|입력| C[python-fastapi-programmer]
-    B -->|입력| D[flutter-ddd-builder]
+    S["/project-starter:new-project"] -->|프로젝트 생성| A
+    A[domain-book-builder] -->|출력| B["domain/{domain}/"]
+    B -->|입력| C["python-fastapi-programmer<br/>(be/)"]
+    B -->|입력| D["flutter-ddd-builder<br/>(app/)"]
 ```
 
-각 플러그인은 독립 실행 가능하지만, domain-book-builder의 출력이 다른 두 플러그인의 입력이 됩니다.
+- `project-starter`: template repo 기반 프로젝트 scaffolding (gh CLI)
+- 각 플러그인은 독립 실행 가능하지만, domain-book-builder의 출력이 다른 두 플러그인의 입력이 됩니다.
 
 ## 플러그인 상세
+
+### Project Starter (`plugins/project-starter/`)
+
+Template repo 기반 프로젝트 scaffolding:
+- `gh repo create --template`으로 Flutter/FastAPI/Admin repo 자동 생성
+- 하나의 프로젝트 디렉토리에 서브 프로젝트 구성 (`app/`, `be/`, `admin/`)
+- `domain/` 디렉토리 생성 후 domain-book-builder 실행 안내
+
+Template repos:
+- Flutter: `ureca-corp/claude-code-flutter-template`
+- FastAPI: `ureca-corp/claude-code-python-fastapi-template`
 
 ### Domain Book Builder (`plugins/domain-book-builder/`)
 
