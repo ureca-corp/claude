@@ -1,19 +1,19 @@
 ---
 name: ui
-description: Generate Flutter UI layer from PRD and screen plan. Creates ASCII art screen designs for approval, then generates ConsumerStatefulWidget pages, components, and router integration with parallel team implementation.
-argument-hint: "[--prd-path PATH]"
+description: Generate Flutter UI layer from Domain Book features and screen plan. Creates ASCII art screen designs for approval, then generates ConsumerStatefulWidget pages, components, and router integration with parallel team implementation.
+argument-hint: ""
 allowed-tools: "*"
 ---
 
 # /ui - UI Layer Generation
 
-Generate complete Flutter UI layer by creating ASCII art screen plans from PRD, getting user approval, then implementing pages and components using parallel team-based workflow.
+Generate complete Flutter UI layer by creating ASCII art screen plans from Domain Book features, getting user approval, then implementing pages and components using parallel team-based workflow.
 
 ## Your Task
 
 Implement the UI layer by:
 
-1. **Reading PRD and Domain APIs** - Parse requirements and available services
+1. **Reading Domain Book features and APIs** - Parse requirements and available services
 2. **Generating Screen Plan** - Create ASCII art wireframes for user approval
 3. **Creating Team** - Spawn agent team for parallel page implementation
 4. **Setting Up Worktrees** - Create isolated git worktrees for each screen
@@ -21,26 +21,20 @@ Implement the UI layer by:
 6. **Quality Verification** - Run `flutter analyze` and build checks
 7. **Integration** - Merge worktrees, register routes, cleanup
 
-## Arguments
-
-- `--prd-path PATH`: Custom path to PRD (default: `ai-context/PRD.md`)
-
 **Example:**
 ```bash
 /ui
-/ui --prd-path docs/requirements.md
 ```
 
 ## Step-by-Step Workflow
 
 ### Step 1: Read Input Documents
 
-**Read PRD:**
+**Read Domain Book features (📱 화면 구성):**
 ```
-ai-context/PRD.md
-- Product requirements
-- User flows
-- Screen descriptions
+ai-context/domain-books/*/features.md
+- 📋 주요 기능 (사용자 시나리오)
+- 📱 화면 구성 (화면 목록, 경로, 네비게이션, UX 레퍼런스)
 ```
 
 **Read Domain Book APIs:**
@@ -68,7 +62,7 @@ available_services = {
 Task({
   description: "Generate ASCII art screen plan",
   subagent_type: "ui-planner",
-  prompt: `Create ASCII art wireframes for all screens described in PRD.
+  prompt: `Create ASCII art wireframes for all screens defined in Domain Book features.md (📱 화면 구성 section).
 
 For each screen:
 1. Design layout with ASCII art (boxes, lines, text)
@@ -121,7 +115,7 @@ Services: auth.AuthService
 
 ... (all screens)
 
-Follow PRD requirements and use available services from Domain Book.`
+Follow Domain Book features (📱 화면 구성) and use available services. Apply \`frontend-design\` skill for UX quality. Reference large-scale service patterns (Instagram, Facebook, etc.) for proven UX.`
 })
 ```
 
@@ -552,14 +546,14 @@ Next Steps:
 
 ## Troubleshooting
 
-**PRD not found:**
-- Check `ai-context/PRD.md` exists
-- Suggest creating PRD first
-- Provide template if needed
+**Domain Book features not found:**
+- Check `ai-context/domain-books/*/features.md` exists
+- Verify 📱 화면 구성 section is present in features.md
+- Run domain-book-builder first if missing
 
 **Screen plan generation fails:**
 - Retry with ui-planner agent
-- Simplify PRD if too complex
+- Simplify features.md if too complex
 - Generate screens one-by-one
 
 **Component conflicts:**
