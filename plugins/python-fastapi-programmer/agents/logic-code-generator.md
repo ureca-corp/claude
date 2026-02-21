@@ -29,6 +29,11 @@ Skill(skill="python-fastapi-programmer:fastapi-architecture")
 Skill(skill="python-fastapi-programmer:fastapi-security")
 ```
 
+```python
+# 3. DDD Class Diagram 생성 (모델 코드 작성 전)
+Skill(skill="python-fastapi-programmer:ddd-class-diagram")
+```
+
 **선택적 스킬** (위치 정보 구현 필요 시):
 
 ```python

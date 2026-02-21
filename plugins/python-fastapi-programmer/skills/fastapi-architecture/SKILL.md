@@ -54,10 +54,11 @@ src/
 │   ├── utils.py             # EnvironmentHelper
 │   └── database.py          # DB 연결
 ├── modules/{domain}/        # 도메인별 Vertical Slice
+│   ├── __init__.py          # Router 조합 (APIRouter + include_router)
 │   ├── _models.py           # Entities (BaseModel 상속)
-│   ├── register.py          # Use Case
-│   ├── dtos.py              # DTOs
-│   └── router.py            # Interface Adapter
+│   ├── _repository.py       # 공유 DB 접근 (선택)
+│   ├── register.py          # Use Case (DTO + Service + Controller 통합)
+│   └── login.py             # Use Case (DTO + Service + Controller 통합)
 └── app/
     └── main.py              # FastAPI 엔트리포인트
 ```
