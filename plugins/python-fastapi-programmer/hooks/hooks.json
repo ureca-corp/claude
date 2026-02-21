@@ -1,0 +1,19 @@
+{
+  "PostToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "F=$(cat | jq -r '.tool_input.file_path // empty'); [[ ! \"$F\" =~ \\.py$ ]] && exit 0; [[ \"$F\" =~ migrations/versions/ ]] && exit 0; [[ ! -f \"$F\" ]] && exit 0; uv run ruff format -q \"$F\" 2>/dev/null; OUT=$(uv run ruff check \"$F\" 2>&1); [ $? -ne 0 ] && echo \"$OUT\" >&2 && exit 2; exit 0",
+          "timeout": 15,
+          "statusMessage": "Linting Python file..."
+        },
+        {
+          "type": "prompt",
+          "prompt": "Check ONLY the Python file just modified for these architecture anti-patterns. If found, fix immediately:\n- `from src.modules.{A} import` in `src/modules/{B}/` → cross-domain import forbidden\n- `session.execute(text(\"...\"))` → no raw SQL, use SQLModel ORM\n- `os.getenv(` → use `settings.XXX` from pydantic-settings\n- `password` or `secret` in log/print → no sensitive data in logs\n- `async def` endpoint without return type annotation → must specify return type\n- `from fastapi import Request` in use case layer → Request only in router layer"
+        }
+      ]
+    }
+  ]
+}
