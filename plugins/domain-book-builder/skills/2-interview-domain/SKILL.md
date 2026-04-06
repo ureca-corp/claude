@@ -1,6 +1,6 @@
 ---
 name: interview-domain
-description: 도메인별 상세 인터뷰 - 완전한 명확성 확보
+description: 특정 도메인에 대해 엔티티 속성·관계·생명주기·권한·제약·비즈니스 룰 6가지 카테고리로 상세 인터뷰하여 모든 모호함을 제거한다. 배치(최대 4개)씩 질문하고 답변마다 SESSION.md를 즉시 업데이트한다.
 user-invocable: false
 ---
 
@@ -40,65 +40,39 @@ user-invocable: false
 
 ---
 
-## 사용 방법
+## 작동 방식
 
 ### 1. 도메인 모호함 식별
 
-```python
-from skills.interview_domain import identify_domain_ambiguities
+SESSION.md에서 해당 도메인 정보를 읽고, 위 6가지 카테고리별로 아직 정의되지 않은 항목을 목록화한다:
 
-ambiguities = identify_domain_ambiguities(
-    domain="users",
-    session_data=read(".claude/SESSION.md")
-)
+```
+도메인: users
 
-# 결과:
-# [
-#     {
-#         "category": "엔티티 속성",
-#         "question": "User는 어떤 필드를 가지나요?",
-#         "priority": "high"
-#     },
-#     {
-#         "category": "관계",
-#         "question": "User와 Translation의 관계는?",
-#         "priority": "high"
-#     },
-#     ...
-# ]
+미정의 항목:
+1. 엔티티 속성 (high): User의 정확한 필드 목록?
+2. 관계 (high):       User와 Translation의 관계?
+3. 권한 (medium):     프로필 수정은 누가?
+4. 제약 (medium):     Email 중복 허용 여부?
+5. 생명주기 (medium): 탈퇴 시 데이터 처리?
+6. 비즈니스 룰 (low): 특별한 정책이 있는지?
 ```
 
-### 2. 배치 질문 생성 (최대 4개)
+### 2. 배치 질문 생성
 
-```python
-from skills.interview_domain import generate_batch_questions
+우선순위 순으로 최대 4개를 선택해 AskUserQuestion으로 질문한다.
 
-batch = generate_batch_questions(
-    ambiguities=ambiguities[:4],
-    domain="users"
-)
+### 3. 답변 즉시 반영
 
-# AskUserQuestion 형식으로 반환
-```
+답변을 받으면 즉시 SESSION.md의 해당 도메인 섹션을 Edit으로 업데이트한다.
 
-### 3. 진행 상황 추적
+### 4. 재평가
 
-```python
-from skills.interview_domain import track_progress
+답변에서 새로운 용어나 개념이 등장하면 추가 모호함을 생성한다:
+- "프로필 사진" 답변 → "어떤 형식으로 저장?" 추가
+- "선호 언어" 답변 → "가능한 값은?" 추가
 
-progress = track_progress(
-    domain="users",
-    completed_batches=2,
-    remaining_ambiguities=3
-)
-
-# {
-#     "domain": "users",
-#     "status": "🚧 진행 중",
-#     "batches": 2,
-#     "remaining": 3
-# }
-```
+6가지 카테고리가 모두 정의될 때까지 반복한다.
 
 ---
 
@@ -132,29 +106,16 @@ progress = track_progress(
 
 ---
 
-## 완전성 검증
+## 완전성 기준
 
-도메인 인터뷰가 완료되려면:
+도메인 인터뷰가 완료되려면 아래 6가지가 모두 정의되어야 한다:
 
-```python
-def is_domain_complete(domain: str, session_data: dict) -> bool:
-    """도메인 인터뷰 완료 여부 확인"""
-
-    required_items = [
-        "엔티티 속성",      # 모든 필드 정의됨
-        "관계",            # 다른 엔티티와의 관계 명확
-        "생명주기",        # 생성/수정/삭제 규칙
-        "권한",            # 누가 무엇을 할 수 있는지
-        "제약",            # 필수/선택, 유효성 규칙
-        "비즈니스 룰"      # 특별한 정책
-    ]
-
-    for item in required_items:
-        if not is_defined(domain, item, session_data):
-            return False
-
-    return True
-```
+- [ ] **엔티티 속성** — 모든 필드가 정의됨
+- [ ] **관계** — 다른 엔티티와의 관계가 명확함
+- [ ] **생명주기** — 생성/수정/삭제 규칙이 있음
+- [ ] **권한** — 누가 무엇을 할 수 있는지 정의됨
+- [ ] **제약** — 필수/선택, 유효성 규칙이 명확함
+- [ ] **비즈니스 룰** — 특별한 정책이 있으면 정의됨
 
 ---
 
@@ -162,12 +123,10 @@ def is_domain_complete(domain: str, session_data: dict) -> bool:
 
 ### 입력 (users 도메인)
 
-```python
-{
-    "domain": "users",
-    "initial_info": "회원 관리 도메인",
-    "completed": []
-}
+```
+도메인: users
+초기 정보: "회원 관리 도메인"
+완료된 항목: []
 ```
 
 ### 배치 1 질문
@@ -263,7 +222,7 @@ def is_domain_complete(domain: str, session_data: dict) -> bool:
             "options": [
                 {
                     "label": "URL (외부 저장소)",
-                    "description": "S3, R2 등 외부 경로"
+                    "description": "이미지는 외부에, 경로만 저장"
                 },
                 {
                     "label": "Base64 인코딩",
@@ -309,41 +268,6 @@ def is_domain_complete(domain: str, session_data: dict) -> bool:
 - 관계: Translation (1:N)
 - 권한: 본인 수정만
 - 제약: Email Unique, ProfileImage 선택적
-```
-
----
-
-## 재평가 알고리즘
-
-각 배치 후:
-
-```python
-def reassess_domain(domain: str, batch_results: dict) -> list:
-    """배치 답변 후 새로운 모호함 탐지"""
-
-    new_ambiguities = []
-
-    # 1. 답변에서 새로운 용어 추출
-    for answer in batch_results.values():
-        new_terms = extract_new_terms(answer)
-
-        # 2. 각 용어에 대한 추가 질문 필요 여부 확인
-        for term in new_terms:
-            if needs_clarification(term):
-                new_ambiguities.append({
-                    "term": term,
-                    "question": generate_follow_up_question(term)
-                })
-
-    # 3. 완전성 체크리스트 검증
-    for category in ["엔티티 속성", "관계", "생명주기", "권한", "제약", "비즈니스 룰"]:
-        if not is_category_complete(domain, category, batch_results):
-            new_ambiguities.append({
-                "category": category,
-                "question": generate_category_question(domain, category)
-            })
-
-    return new_ambiguities
 ```
 
 ---

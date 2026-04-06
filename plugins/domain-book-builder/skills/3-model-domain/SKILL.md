@@ -1,6 +1,6 @@
 ---
 name: model-domain
-description: 유비쿼터스 언어 명세 작성 - 서술형 도메인 모델 (ERD 대체)
+description: SESSION.md의 도메인 정의를 바탕으로 유비쿼터스 언어(서술형 도메인 모델)를 작성한다. ERD 대신 "A는 B를 할 수 있다" 형식의 자연어 명세로 domain-model.md를 생성한다.
 user-invocable: false
 ---
 
@@ -49,104 +49,49 @@ user-invocable: false
 
 ---
 
-## 사용 방법
+## 작동 방식
 
 ### 1. 용어 추출
 
-```python
-from skills.model_domain import extract_terms
+SESSION.md에서 해당 도메인의 엔티티와 속성을 읽고, 각 개념을 한글 용어로 정의한다:
 
-terms = extract_terms(
-    session_data=read(".claude/SESSION.md"),
-    domain="users"
-)
+```
+SESSION.md → users 도메인:
+  속성: ID, Email, DisplayName, ProfileImage, PreferredLanguage, CreatedAt
 
-# 결과:
-# [
-#     {"term": "사용자 (User)", "definition": "앱을 사용하는 개인", "example": "홍길동"},
-#     {"term": "식별자 (ID)", "definition": "사용자를 고유하게 구분하는 값", "example": "u_123abc"},
-#     {"term": "이메일 (Email)", "definition": "로그인 및 연락용 이메일 주소", "example": "user@example.com"},
-#     ...
-# ]
+용어 정의:
+  사용자 (User)             — 앱을 사용하는 개인
+  식별자 (ID)               — 사용자를 고유하게 구분하는 값
+  이메일 (Email)            — 로그인 및 연락용 이메일 주소
+  표시 이름 (DisplayName)   — 다른 사용자에게 보이는 이름
+  프로필 사진 (ProfileImage) — 사용자의 프로필 이미지 경로
+  선호 언어 (PreferredLanguage) — 사용자가 선호하는 언어 설정
+  가입 시각 (CreatedAt)     — 사용자가 가입한 날짜와 시간
 ```
 
 ### 2. 관계 규칙 생성
 
-```python
-from skills.model_domain import generate_relationship_rules
+SESSION.md의 관계 정의를 서술형 문장으로 변환한다:
 
-rules = generate_relationship_rules(
-    domain="users",
-    session_data=read(".claude/SESSION.md")
-)
-
-# 결과:
-# [
-#     {
-#         "rule_number": 1,
-#         "statement": "사용자는 여러 개의 번역 기록을 가질 수 있다.",
-#         "details": "한 사용자가 0개 이상의 번역을 요청할 수 있음",
-#         "example": "홍길동 사용자는 10개의 번역 기록을 가지고 있다"
-#     },
-#     ...
-# ]
+```
+1:N 관계 (User → Translation):
+  "사용자는 여러 개의 번역 기록을 가질 수 있다."
+  "번역 기록은 반드시 한 명의 사용자에게 속한다."
+  "사용자가 삭제되면 모든 번역 기록도 함께 삭제된다."
 ```
 
 ### 3. 제약 조건 추출
 
-```python
-from skills.model_domain import extract_constraints
+SESSION.md의 제약 정의를 자연어로 변환한다:
 
-constraints = extract_constraints(
-    domain="users",
-    session_data=read(".claude/SESSION.md")
-)
-
-# 결과:
-# [
-#     {
-#         "number": 1,
-#         "constraint": "식별자 (ID)는 시스템이 자동으로 생성한다.",
-#         "reason": "사용자가 직접 설정할 수 없음"
-#     },
-#     {
-#         "number": 2,
-#         "constraint": "이메일 (Email)은 중복될 수 없다.",
-#         "reason": "이미 존재하는 이메일로는 가입 불가",
-#         "example": "user@example.com으로 이미 가입되어 있으면 다시 가입 불가"
-#     },
-#     ...
-# ]
+```
+Email Unique → "이메일 (Email)은 중복될 수 없다."
+ID 자동생성 → "식별자 (ID)는 시스템이 자동으로 생성한다."
 ```
 
 ### 4. 생명주기 정의
 
-```python
-from skills.model_domain import define_lifecycle
-
-lifecycle = define_lifecycle(
-    domain="users",
-    session_data=read(".claude/SESSION.md")
-)
-
-# 결과:
-# {
-#     "create": {
-#         "steps": ["요청 접수", "중복 확인", "필수 정보 검증", "엔티티 생성", "자동 값 설정"],
-#         "rules": ["선호 언어 미제공 시 기본값은 '영어'"]
-#     },
-#     "update": {
-#         "steps": ["수정 요청", "권한 검사", "변경 가능 필드만 수정"],
-#         "editable_fields": ["표시 이름", "프로필 사진", "선호 언어"],
-#         "readonly_fields": ["식별자", "이메일", "가입 시각"],
-#         "rules": ["본인만 자신의 프로필을 수정할 수 있다"]
-#     },
-#     "delete": {
-#         "steps": ["탈퇴 요청", "본인 확인", "연결 데이터 확인", "모든 데이터 삭제", "엔티티 삭제"],
-#         "rules": ["탈퇴는 즉시 실행되며, 복구 불가능하다"]
-#     }
-# }
-```
+생성·수정·삭제 각 단계를 단계별 흐름도로 작성한다.
 
 ---
 
@@ -390,6 +335,19 @@ lifecycle = define_lifecycle(
 
 ---
 
+## 기술 용어 금지 목록
+
+작성 후 아래 키워드가 없는지 확인한다:
+
+| 금지 영역 | 키워드 |
+|---------|-------|
+| 데이터베이스 | 테이블, 컬럼, Foreign Key, Primary Key, Index, UUID, VARCHAR, INT, TIMESTAMP |
+| 프레임워크 | FastAPI, SQLAlchemy, Alembic, Pydantic |
+| 프로토콜 | HTTP, REST, GraphQL, WebSocket |
+| 클라우드 | PostgreSQL, MySQL, Redis, S3 |
+
+---
+
 ## 검증 체크리스트
 
 domain-model.md 작성 완료 후:
@@ -402,36 +360,3 @@ domain-model.md 작성 완료 후:
 - [ ] 생명주기 3단계 (생성/수정/삭제) 모두 포함
 - [ ] 기술 용어 (테이블, 컬럼, FK, UUID 등) 0개
 - [ ] 한글 용어 사용 (영어 병기는 괄호 안에)
-
----
-
-## 기술 용어 필터링
-
-**금지 키워드**:
-```python
-TECH_KEYWORDS = [
-    # 데이터베이스
-    "테이블", "컬럼", "Foreign Key", "Primary Key", "Index",
-    "UUID", "VARCHAR", "INT", "TIMESTAMP",
-
-    # 프레임워크
-    "FastAPI", "SQLAlchemy", "Alembic", "Pydantic",
-
-    # 프로토콜
-    "HTTP", "REST", "GraphQL", "WebSocket",
-
-    # 기술 스택
-    "PostgreSQL", "MySQL", "Redis", "S3"
-]
-```
-
-**검증**:
-```python
-def validate_no_tech_terms(content: str) -> bool:
-    """기술 용어가 없는지 확인"""
-    lower_content = content.lower()
-    for keyword in TECH_KEYWORDS:
-        if keyword.lower() in lower_content:
-            return False
-    return True
-```

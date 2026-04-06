@@ -1,6 +1,6 @@
 ---
 name: clarify
-description: 모호함 식별 및 명확화 질문 생성
+description: 사용자 요구사항에서 모호한 부분을 탐지하고 AskUserQuestion 형식의 명확화 질문을 생성한다. 범위·기능·제약·관계·권한·생명주기 카테고리로 분류하여 배치(최대 4개)씩 질문한다.
 user-invocable: false
 ---
 
@@ -39,45 +39,30 @@ user-invocable: false
 
 ---
 
-## 사용 방법
+## 작동 방식
 
 ### 1. 초기 분석
 
-```python
-from skills.clarify import identify_ambiguities
+사용자 요청에서 위 카테고리별로 모호한 부분을 식별한다:
 
-ambiguities = identify_ambiguities(
-    user_request="외국인 여행자용 번역 앱 만들어줘"
-)
-
-# 결과:
-# [
-#     {
-#         "category": "범위",
-#         "ambiguity": "회원은 어떤 정보를 가지나요?",
-#         "priority": "high"
-#     },
-#     {
-#         "category": "기능",
-#         "ambiguity": "번역 결과를 저장하나요?",
-#         "priority": "high"
-#     },
-#     ...
-# ]
 ```
+요청: "외국인 여행자용 번역 앱 만들어줘"
+
+탐지:
+- 범위 (high):   회원이 어떤 정보를 가지는지 불명확
+- 기능 (high):   번역 히스토리를 저장하는지 불명확
+- 제약 (high):   지원 언어 범위가 불명확
+- 권한 (medium): 인증이 필요한지 불명확
+```
+
+우선순위(high → medium → low) 순으로 정렬하고, 배치당 최대 4개를 선택해 질문한다.
 
 ### 2. 질문 생성
 
-```python
-from skills.clarify import generate_questions
-
-questions = generate_questions(
-    ambiguities=ambiguities[:4],  # 최대 4개
-    multiselect_threshold=3  # 3개 이상 옵션이면 multiSelect
-)
-
-# AskUserQuestion 형식으로 반환
-```
+탐지된 모호함마다 AskUserQuestion 형식의 질문을 만든다:
+- 옵션이 2개이면 `multiSelect: False`
+- 옵션이 3개 이상이면 `multiSelect: True`
+- 옵션이 5개 이상이면 마지막에 "기타" 옵션 추가
 
 ---
 
@@ -102,27 +87,19 @@ questions = generate_questions(
 
 ## 기술 질문 필터링
 
-**금지 키워드**:
-```python
-TECH_KEYWORDS = [
-    "FastAPI", "PostgreSQL", "MySQL",
-    "JWT", "OAuth", "REST", "GraphQL",
-    "S3", "GCS", "Firebase", "Supabase",
-    "Docker", "Kubernetes",
-    "UUID", "VARCHAR", "INT"
-]
-```
+기술 구현과 관련된 질문은 하지 않는다. 다음 키워드가 포함된 질문은 제외한다:
 
-**검사**:
-```python
-def is_technical_question(question: str) -> bool:
-    """기술 질문인지 확인"""
-    lower_q = question.lower()
-    for keyword in TECH_KEYWORDS:
-        if keyword.lower() in lower_q:
-            return True
-    return False
-```
+| 금지 영역 | 예시 키워드 |
+|---------|-----------|
+| 특정 기술 스택 | FastAPI, PostgreSQL, MySQL, Docker, Kubernetes |
+| 인증 방식 | JWT, OAuth, Bearer |
+| API 방식 | REST, GraphQL |
+| 클라우드 서비스 | S3, GCS, Firebase, Supabase |
+| DB 타입 | UUID, VARCHAR, INT |
+
+대신 이렇게 질문한다:
+- "인증은 JWT인가요?" → "로그인이 필요한가요?"
+- "이미지는 S3에 저장할까요?" → "이미지 업로드 기능이 필요한가요?"
 
 ---
 
@@ -134,32 +111,15 @@ def is_technical_question(question: str) -> bool:
 ```
 
 ### 탐지된 모호함
-```python
-[
-    {
-        "category": "범위",
-        "text": "회원 정보 범위?",
-        "priority": "high"
-    },
-    {
-        "category": "기능",
-        "text": "번역 히스토리 저장?",
-        "priority": "high"
-    },
-    {
-        "category": "제약",
-        "text": "언어 지원 범위?",
-        "priority": "high"
-    },
-    {
-        "category": "권한",
-        "text": "인증 필요 여부?",
-        "priority": "medium"
-    }
-]
+```
+1. 범위 (high):   회원 정보 범위?
+2. 기능 (high):   번역 히스토리 저장?
+3. 제약 (high):   언어 지원 범위?
+4. 권한 (medium): 인증 필요 여부?
 ```
 
 ### 생성된 질문
+
 ```python
 {
     "questions": [

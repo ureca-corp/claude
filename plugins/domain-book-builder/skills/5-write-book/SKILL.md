@@ -1,6 +1,6 @@
 ---
 name: write-book
-description: Domain Book 완성 - README + features + business-rules 생성
+description: domain-model.md와 api-spec.md를 바탕으로 도메인 README·features·business-rules를 작성하여 Domain Book을 완성한다. 도메인 의존성을 Topological Sort로 해결하고 독립 도메인부터 병렬 작성한다.
 user-invocable: false
 ---
 
@@ -34,78 +34,43 @@ user-invocable: false
 
 ---
 
-## 사용 방법
+## 작동 방식
 
-### 1. README.md 생성
+### 1. 도메인 의존성 분석
 
-```python
-from skills.write_book import generate_readme
+각 domain-model.md에서 다른 도메인을 참조하는지 확인한다:
 
-readme = generate_readme(
-    domain="users",
-    domain_model=read("ai-context/domain-books/users/domain-model.md"),
-    api_spec=read("ai-context/domain-books/users/api-spec.md"),
-    session_data=read(".claude/SESSION.md")
-)
+```
+domain-model.md 검토:
+  - "번역 기록은 반드시 한 명의 사용자에게 속한다" → translations는 users에 의존
 
-# 결과:
-# """
-# # users 도메인
-#
-# > **역할**: 앱 사용자 관리
-#
-# ---
-#
-# ## 📚 목차
-# ...
-# """
+의존성 맵:
+  users:        []              (독립)
+  translations: [users]         (users 완료 후 작성)
+  missions:     [users]         (users 완료 후 작성)
+  phrases:      []              (독립)
 ```
 
-### 2. features.md 생성
+### 2. Topological Sort로 작성 순서 결정
 
-```python
-from skills.write_book import generate_features
+의존성이 없는 도메인부터 먼저 작성하고, 의존 도메인은 선행 도메인 완료 후 작성한다:
 
-features = generate_features(
-    domain="users",
-    session_data=read(".claude/SESSION.md"),
-    api_spec=read("ai-context/domain-books/users/api-spec.md")
-)
-
-# SESSION.md Phase 1-2 + api-spec.md 기반
+```
+1단계 (동시): users, phrases
+2단계 (동시): translations, missions  ← users 완료 후
 ```
 
-### 3. business-rules.md 생성
+### 3. 각 도메인 파일 작성
 
-```python
-from skills.write_book import generate_business_rules
+domain-model.md + api-spec.md + SESSION.md를 읽고 3개 파일을 생성한다:
 
-rules = generate_business_rules(
-    domain="users",
-    domain_model=read("ai-context/domain-books/users/domain-model.md"),
-    session_data=read(".claude/SESSION.md")
-)
+**README.md**: 도메인 역할 한 줄 요약 + 목차 + 다른 도메인과의 관계 + 통계
+**features.md**: 기능별 사용자 시나리오 + 범위 밖(Out of Scope) 명시
+**business-rules.md**: 제약 조건 + 상태 전이(있으면) + 권한 규칙 + 예외 처리
 
-# domain-model.md 제약 조건 + SESSION.md 비즈니스 룰 기반
-```
+### 4. 최종 검증
 
-### 4. 도메인 관계 추출
-
-```python
-from skills.write_book import extract_domain_relationships
-
-relationships = extract_domain_relationships(
-    domain="users",
-    domain_model=read("ai-context/domain-books/users/domain-model.md"),
-    all_domains=["users", "translations", "missions", "phrases"]
-)
-
-# 결과:
-# {
-#     "depends_on": [],  # users는 독립
-#     "used_by": ["translations", "missions"]  # 이 도메인들이 users 참조
-# }
-```
+5개 파일이 모두 존재하고, 기술 용어가 없으며, 상호 참조가 일관된지 확인한다.
 
 ---
 
@@ -156,15 +121,6 @@ relationships = extract_domain_relationships(
 # users 도메인
 
 > **역할**: 앱 사용자 관리
-
----
-
-## 📚 목차
-
-1. [기능 정의](./features.md) - 이 도메인이 하는 일
-2. [도메인 모델](./domain-model.md) - 유비쿼터스 언어 명세
-3. [API 명세](./api-spec.md) - API 상세 설계
-4. [비즈니스 규칙](./business-rules.md) - 제약조건, 정책
 
 ---
 
@@ -223,25 +179,6 @@ relationships = extract_domain_relationships(
 
 ---
 
-## 📱 화면 구성
-
-> **디자인 원칙**: Instagram, Facebook, Twitter 등 1억 명 이상 사용하는 서비스의 UX를 참고하되, 심플하고 미니멀한 구성을 지향한다. `frontend-design` 스킬을 활용하여 디자인 품질을 확보한다.
-
-### 화면 1: {화면 이름}
-
-- **경로**: /{path}
-- **도메인**: {domain}
-- **화면 목적**: {이 화면의 핵심 가치}
-- **UX 레퍼런스**: {참고 서비스의 유사 화면}
-- **핵심 인터랙션**:
-  - {주요 행동 1}
-  - {주요 행동 2}
-- **정보 구조**: {정보 우선순위}
-- **네비게이션**: {이동 경로}
-- **관련 기능**: 기능 {N}
-
----
-
 ## 🚫 범위 밖 (Out of Scope)
 
 - {제외 사항 1}
@@ -280,46 +217,6 @@ relationships = extract_domain_relationships(
 
 ---
 
-### 2. 프로필 조회
-
-...
-
----
-
-## 📱 화면 구성
-
-> **디자인 원칙**: Instagram, KakaoTalk 등 1억 명 이상 사용하는 서비스의 UX를 참고하되, 심플하고 미니멀한 구성을 지향한다. `frontend-design` 스킬을 활용하여 디자인 품질을 확보한다.
-
-### 화면 1: 로그인
-
-- **경로**: /login
-- **도메인**: users
-- **화면 목적**: 최소한의 마찰로 앱에 진입한다
-- **UX 레퍼런스**: Instagram 로그인 (로고 + 단 2개 입력필드 + 소셜 로그인)
-- **핵심 인터랙션**:
-  - 이메일/비밀번호 입력 후 로그인
-  - 소셜 로그인 원탭 진입
-- **정보 구조**: 브랜드 로고 > 입력 폼 > 소셜 로그인 > 회원가입 링크
-- **네비게이션**: 성공 → /home, 회원가입 → /register
-- **관련 기능**: 기능 1 (회원가입)
-
----
-
-### 화면 2: 프로필
-
-- **경로**: /profile
-- **도메인**: users
-- **화면 목적**: 내 정보를 한눈에 확인하고 편집한다
-- **UX 레퍼런스**: Instagram 프로필 (프로필 사진 + 핵심 숫자 + 편집 버튼)
-- **핵심 인터랙션**:
-  - 프로필 사진/닉네임 확인
-  - "편집" 탭하여 수정 모드 진입
-- **정보 구조**: 프로필 사진 > 닉네임 > 활동 요약 > 설정
-- **네비게이션**: 편집 → /profile/edit, 설정 → /settings
-- **관련 기능**: 기능 2 (프로필 조회), 기능 3 (프로필 수정)
-
----
-
 ## 🚫 범위 밖 (Out of Scope)
 
 - 소셜 로그인 (Google, Apple 등)
@@ -346,7 +243,7 @@ relationships = extract_domain_relationships(
 
 ## 🔄 상태 전이
 
-{있으면 FSM 다이어그램, 없으면 "이 도메인은 상태 전이가 없습니다"}
+{있으면 상태 전이 흐름, 없으면 "이 도메인은 상태 전이가 없습니다"}
 
 ---
 
@@ -451,169 +348,39 @@ relationships = extract_domain_relationships(
 
 ---
 
-## 도메인 요약 생성
+## 도메인 관계 추출
 
-```python
-def generate_domain_summary(domain: str) -> dict:
-    """도메인 요약 정보 생성"""
+다른 도메인을 참조하는지 확인하는 방법:
+domain-model.md에서 다른 도메인 이름이나 핵심 엔티티를 언급하면 의존성이 있다고 판단한다.
 
-    domain_model = read(f"ai-context/domain-books/{domain}/domain-model.md")
-    api_spec = read(f"ai-context/domain-books/{domain}/api-spec.md")
-
-    # 엔티티 수 추출
-    entities = extract_entities(domain_model)
-
-    # API 수 추출
-    apis = extract_api_count(api_spec)
-
-    # 상태 전이 확인
-    has_state_machine = detect_state_machine(domain_model)
-
-    return {
-        "entity_count": len(entities),
-        "api_count": apis,
-        "has_state_machine": has_state_machine
-    }
+```
+translations/domain-model.md 에서:
+  "번역 기록은 반드시 한 명의 사용자에게 속한다" → users 참조
+  → translations.depends_on = [users]
 ```
 
 ---
 
-## 핵심 가치 추출
-
-```python
-def extract_core_value(domain: str, session_data: dict) -> str:
-    """도메인의 핵심 가치를 한 문장으로 추출"""
-
-    # SESSION.md Phase 1에서 도메인 설명 찾기
-    domain_desc = find_domain_description(domain, session_data)
-
-    # 핵심 역할 추출
-    core_role = extract_core_role(domain_desc)
-
-    # 한 문장으로 요약
-    # 예: "사용자 정보를 안전하게 관리하고 다른 도메인에 신원 정보를 제공한다"
-    return summarize_to_sentence(core_role)
-```
-
----
-
-## 최종 검증
-
-```python
-def validate_domain_book(domain: str) -> dict:
-    """Domain Book 완전성 검증"""
-
-    base_path = f"ai-context/domain-books/{domain}"
-
-    # 1. 필수 파일 존재 확인
-    required_files = [
-        "README.md",
-        "features.md",
-        "domain-model.md",
-        "api-spec.md",
-        "business-rules.md"
-    ]
-
-    for file in required_files:
-        path = f"{base_path}/{file}"
-        assert exists(path), f"Missing {file} in {domain}"
-
-    # 2. 기술 용어 검사
-    tech_terms = [
-        "FastAPI", "PostgreSQL", "UUID", "VARCHAR",
-        "JWT", "REST", "HTTP", "GET", "POST"
-    ]
-
-    for file in required_files:
-        content = read(f"{base_path}/{file}")
-        for term in tech_terms:
-            assert term not in content, f"Technical term '{term}' found in {domain}/{file}"
-
-    # 3. 한글 메시지 검사 (api-spec.md만)
-    api_spec = read(f"{base_path}/api-spec.md")
-    assert contains_korean_messages(api_spec), f"Missing Korean messages in {domain}/api-spec.md"
-
-    # 4. 상호 참조 일관성
-    domain_model = read(f"{base_path}/domain-model.md")
-    api_spec = read(f"{base_path}/api-spec.md")
-    assert is_consistent(domain_model, api_spec), f"Inconsistent references in {domain}"
-
-    return {
-        "domain": domain,
-        "status": "PASS",
-        "files": len(required_files),
-        "technical_terms": 0,
-        "korean_messages": True
-    }
-```
-
----
-
-## 상호 참조 일관성 검사
-
-```python
-def is_consistent(domain_model: str, api_spec: str) -> bool:
-    """domain-model과 api-spec 일관성 확인"""
-
-    # 1. domain-model에 정의된 용어 추출
-    defined_terms = extract_terms_from_model(domain_model)
-
-    # 2. api-spec에서 사용된 필드명 추출
-    used_fields = extract_fields_from_spec(api_spec)
-
-    # 3. 모든 필드가 domain-model에 정의되어 있는지 확인
-    for field in used_fields:
-        if field not in defined_terms:
-            return False
-
-    return True
-```
-
----
-
-## 의존성 추출
-
-```python
-def extract_domain_references(domain: str, all_domains: list) -> list:
-    """domain-model.md에서 참조하는 다른 도메인 탐지"""
-
-    domain_model = read(f"ai-context/domain-books/{domain}/domain-model.md")
-    referenced = []
-
-    domain_keywords = {
-        "users": ["사용자", "User", "회원"],
-        "translations": ["번역", "Translation"],
-        "missions": ["미션", "Mission"],
-        "phrases": ["문장", "Phrase", "표현"]
-    }
-
-    for other_domain, keywords in domain_keywords.items():
-        if other_domain == domain:
-            continue  # 자기 자신 제외
-
-        for keyword in keywords:
-            if keyword in domain_model:
-                referenced.append(other_domain)
-                break
-
-    return list(set(referenced))
-```
-
----
-
-## 완료 조건
+## 최종 검증 체크리스트
 
 Domain Book 완성 조건:
 
-- [ ] 5개 파일 모두 존재
+**파일 존재**:
+- [ ] README.md
+- [ ] features.md
+- [ ] domain-model.md
+- [ ] api-spec.md
+- [ ] business-rules.md
+
+**내용 품질**:
 - [ ] README.md에 도메인 관계 명시
 - [ ] features.md에 범위 밖 명시
 - [ ] business-rules.md에 권한 규칙 포함
-- [ ] 기술 용어 0개
-- [ ] 한글 메시지 사용
-- [ ] 상호 참조 일관성
-- [ ] 모든 엔티티가 domain-model에 정의됨
-- [ ] 모든 API가 api-spec에 명시됨
-- [ ] 📱 화면 구성이 주요 사용자 시나리오를 커버
-- [ ] 각 화면에 UX 레퍼런스 명시
-- [ ] 화면 간 네비게이션 연결 확인
+- [ ] 기술 용어 (FastAPI, PostgreSQL, UUID, VARCHAR, JWT, REST, HTTP) 0개
+- [ ] 오류 메시지가 모두 한글
+- [ ] api-spec.md와 domain-model.md의 용어가 일치
+
+**완성도**:
+- [ ] 모든 엔티티가 domain-model.md에 정의됨
+- [ ] 모든 API가 api-spec.md에 명시됨
+- [ ] 도메인 간 참조 관계가 README.md에 반영됨

@@ -12,7 +12,7 @@
         },
         {
           "type": "prompt",
-          "prompt": "Check ONLY the Python file just modified for these architecture anti-patterns. If found, fix immediately:\n- `from src.modules.{A} import` in `src/modules/{B}/` → cross-domain import forbidden\n- `session.execute(text(\"...\"))` → no raw SQL, use SQLModel ORM\n- `os.getenv(` → use `settings.XXX` from pydantic-settings\n- `password` or `secret` in log/print → no sensitive data in logs\n- `async def` endpoint without return type annotation → must specify return type\n- `from fastapi import Request` in use case layer → Request only in router layer"
+          "prompt": "Look at the file_path from the tool input. If it does NOT end with '.py', output only the word 'OK' and stop — do not explain, do not comment. If it IS a .py file, check ONLY that file for these architecture anti-patterns and fix immediately if found:\n- `from src.modules.{A} import` in `src/modules/{B}/` → cross-domain import forbidden\n- `session.execute(text(\"...\"))` → no raw SQL, use SQLModel ORM\n- `os.getenv(` → use `settings.XXX` from pydantic-settings\n- `password` or `secret` in log/print → no sensitive data in logs\n- `async def` endpoint without return type annotation → must specify return type\n- `from fastapi import Request` in use case layer → Request only in router layer"
         }
       ]
     }

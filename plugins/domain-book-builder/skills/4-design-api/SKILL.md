@@ -1,6 +1,6 @@
 ---
 name: design-api
-description: API 명세 작성 - 정확한 Request/Response + 수도코드
+description: domain-model.md를 기반으로 API 명세를 작성한다. 각 API마다 Request/Response 필드 테이블과 오류 응답을 정의하고, 복잡한 로직(Cascade·상태전이·다단계 검증)에만 수도코드를 추가한다. 기술 용어(HTTP, REST, JWT 등) 금지.
 user-invocable: false
 ---
 
@@ -29,116 +29,40 @@ user-invocable: false
 
 ---
 
-## 사용 방법
+## 작동 방식
 
 ### 1. API 목록 추출
 
-```python
-from skills.design_api import extract_apis
+SESSION.md와 domain-model.md의 생명주기(생성/수정/삭제)와 비즈니스 룰을 읽고 필요한 API를 도출한다:
 
-apis = extract_apis(
-    domain="users",
-    session_data=read(".claude/SESSION.md"),
-    domain_model=read("ai-context/domain-books/users/domain-model.md")
-)
-
-# 결과:
-# [
-#     {"name": "회원가입", "type": "create", "complexity": "simple"},
-#     {"name": "프로필 조회", "type": "read", "complexity": "simple"},
-#     {"name": "프로필 수정", "type": "update", "complexity": "simple"},
-#     {"name": "회원 탈퇴", "type": "delete", "complexity": "medium"},  # Cascade 처리
-#     ...
-# ]
+```
+domain-model.md → users 도메인:
+  생성: 회원가입
+  조회: 프로필 조회
+  수정: 프로필 수정
+  삭제: 회원 탈퇴 (Cascade → 복잡도 "보통")
 ```
 
-### 2. Request 모델 생성
+### 2. 복잡도 판단
 
-```python
-from skills.design_api import generate_request_model
+각 API가 수도코드가 필요한지 판단한다:
 
-request = generate_request_model(
-    api_name="회원가입",
-    domain_model=read("ai-context/domain-books/users/domain-model.md")
-)
+| 복잡도 | 판단 기준 | 수도코드 |
+|-------|---------|--------|
+| 단순 | 단순 CRUD, 검증만 있음 | ❌ 불필요 |
+| 보통 | Cascade, 다단계 검증, 조건부 로직 | ✅ 필요 |
+| 복잡 | 상태 전이, 복잡한 계산, 외부 호출 | ✅ 필수 |
 
-# 결과:
-# {
-#     "fields": [
-#         {
-#             "name": "email",
-#             "type": "문자열",
-#             "required": True,
-#             "description": "로그인용 이메일 주소",
-#             "example": "user@example.com",
-#             "validation": ["이메일 형식", "중복 불가", "최대 255자"]
-#         },
-#         {
-#             "name": "displayName",
-#             "type": "문자열",
-#             "required": True,
-#             "description": "사용자 닉네임",
-#             "example": "여행러버",
-#             "validation": ["최소 1자", "최대 50자"]
-#         },
-#         ...
-#     ]
-# }
-```
+### 3. Request/Response 작성
 
-### 3. Response 모델 생성
+domain-model.md의 용어와 제약 조건을 그대로 활용해 필드 테이블을 작성한다.
+- 필드명: camelCase
+- 타입: 한글 (문자열, 숫자, 불린, 날짜시간, 배열, 객체)
+- 오류 메시지: 반드시 한글
 
-```python
-from skills.design_api import generate_response_model
+### 4. 수도코드 작성 (복잡한 로직만)
 
-response = generate_response_model(
-    api_name="회원가입",
-    domain_model=read("ai-context/domain-books/users/domain-model.md")
-)
-
-# 결과:
-# {
-#     "success": {
-#         "status_code": 200,
-#         "fields": [
-#             {"name": "id", "type": "문자열", "description": "생성된 사용자 ID", "example": "u_123abc"},
-#             {"name": "email", "type": "문자열", "description": "이메일 주소", "example": "user@example.com"},
-#             {"name": "displayName", "type": "문자열", "description": "표시 이름", "example": "여행러버"},
-#             {"name": "createdAt", "type": "날짜시간", "description": "가입 시각", "example": "2026-01-28T10:30:00Z"}
-#         ]
-#     },
-#     "errors": [
-#         {
-#             "status_code": 409,
-#             "condition": "이메일 중복",
-#             "message": "이미 가입된 이메일입니다",
-#             "fields": {"email": "user@example.com"}
-#         },
-#         {
-#             "status_code": 400,
-#             "condition": "필드 검증 실패",
-#             "message": "이메일 형식이 올바르지 않습니다",
-#             "fields": {"email": "invalid-email"}
-#         }
-#     ]
-# }
-```
-
-### 4. 수도코드 생성 (복잡한 로직만)
-
-```python
-from skills.design_api import needs_pseudocode
-
-if needs_pseudocode(api_name="회원가입", complexity="simple"):
-    # False - 단순 CRUD는 수도코드 불필요
-    pass
-elif needs_pseudocode(api_name="회원 탈퇴", complexity="medium"):
-    # True - Cascade 처리 등 복잡한 로직 있음
-    pseudocode = generate_pseudocode(
-        api_name="회원 탈퇴",
-        domain_model=read("ai-context/domain-books/users/domain-model.md")
-    )
-```
+단계별 번호와 들여쓰기로 처리 흐름을 자연어로 표현한다.
 
 ---
 
@@ -196,12 +120,6 @@ elif needs_pseudocode(api_name="회원 탈퇴", complexity="medium"):
 | 400 | 필드 검증 실패 | 이메일 형식이 올바르지 않습니다 | {"email": "invalid-email"} |
 | 400 | 필수 필드 누락 | 필수 필드가 누락되었습니다 | {"displayName": null} |
 | 400 | 언어 코드 오류 | 지원하지 않는 언어입니다 | {"preferredLanguage": "fr"} |
-
----
-
-## 2. 프로필 조회
-
-...
 
 ---
 
@@ -332,11 +250,7 @@ elif needs_pseudocode(api_name="회원 탈퇴", complexity="medium"):
    - 맞으면: [처리 A]
    - 아니면: [처리 B]
 
-3. [액션 3]
-   - [반복 처리]
-   - 각 항목마다 [처리]
-
-4. [결과 반환]
+3. [결과 반환]
 ```
 
 ### 조건문
@@ -362,7 +276,7 @@ elif needs_pseudocode(api_name="회원 탈퇴", complexity="medium"):
 ### 외부 호출
 
 ```
-1. X API에 Y를 요청한다
+1. X 서비스에 Y를 요청한다
    - 성공하면: 결과를 저장
    - 실패하면: Z 오류 반환
 
@@ -391,7 +305,6 @@ elif needs_pseudocode(api_name="회원 탈퇴", complexity="medium"):
 |--------|------|------|
 | tags | 문자열 배열 | 관심 태그 목록 |
 | address | 주소 객체 | 주소 정보 |
-| metadata | 객체 | 추가 정보 (자유 형식) |
 ```
 
 **객체 타입은 별도 정의**:
@@ -408,55 +321,16 @@ elif needs_pseudocode(api_name="회원 탈퇴", complexity="medium"):
 
 ---
 
-## 검증 규칙 예시
+## 기술 용어 금지 목록
 
-| 규칙 유형 | 표현 |
-|-----------|------|
-| 형식 | 이메일 형식, URL 형식, 전화번호 형식 |
-| 길이 | 최소 N자, 최대 N자, 정확히 N자 |
-| 범위 | N 이상, N 이하, N~M 사이 |
-| 선택 | 'A', 'B', 'C' 중 하나 |
-| 유일성 | 중복 불가 |
-| 참조 | 존재하는 X여야 함 |
+아래 용어가 없는지 확인한다:
 
-**예시**:
-- "이메일 형식, 중복 불가, 최대 255자"
-- "'ko', 'en' 중 하나 (기본값: 'en')"
-- "1 이상 100 이하"
-- "존재하는 사용자여야 함"
-
----
-
-## 기술 용어 필터링
-
-**금지 키워드**:
-```python
-TECH_KEYWORDS = [
-    # 프로토콜
-    "HTTP", "HTTPS", "REST", "GraphQL", "WebSocket",
-    "GET", "POST", "PUT", "PATCH", "DELETE",
-
-    # 인증
-    "JWT", "OAuth", "Bearer", "Token",
-
-    # 형식
-    "JSON", "XML", "YAML",
-
-    # 헤더
-    "Content-Type", "Authorization", "Accept",
-
-    # 상태 코드 용어
-    "OK", "Created", "Bad Request", "Unauthorized", "Forbidden", "Not Found",
-    "Conflict", "Internal Server Error"
-]
-```
-
-**대신 사용**:
-- "GET /api/users" → "사용자 목록 조회"
-- "200 OK" → "성공 (200)"
-- "404 Not Found" → "404"
-- "JWT Token" → "인증 정보"
-- "JSON Response" → "응답"
+| 금지 영역 | 키워드 | 대체 표현 |
+|---------|-------|---------|
+| 프로토콜 | HTTP, REST, GraphQL, GET, POST, PUT, PATCH, DELETE | 사용 목적으로 설명 |
+| 인증 | JWT, OAuth, Bearer, Token | "인증 정보" |
+| 형식 | JSON, XML, YAML | "응답" |
+| 상태 코드 영어명 | OK, Created, Bad Request, Forbidden | 숫자만 (예: "성공 (200)") |
 
 ---
 
