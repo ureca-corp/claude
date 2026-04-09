@@ -7,7 +7,7 @@
     "url": "https://github.com/ureca-corp"
   },
   "metadata": {
-    "description": "도메인 주도 설계 및 AI 기반 개발 도구 모음",
+    "description": "유레카엔터프라이즈 Claude Plugins",
     "version": "1.0.0",
     "pluginRoot": "./plugins",
     "license": "MIT"
@@ -17,7 +17,7 @@
       "name": "project-starter",
       "source": "./plugins/project-starter",
       "description": "Template repo 기반 새 프로젝트 생성",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "ureca",
         "url": "https://github.com/ureca-corp"
@@ -27,7 +27,7 @@
       "name": "domain-book-builder",
       "source": "./plugins/domain-book-builder",
       "description": "기술 독립적 Domain Book 생성",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "ureca",
         "url": "https://github.com/ureca-corp"
@@ -37,7 +37,7 @@
       "name": "python-fastapi-programmer",
       "source": "./plugins/python-fastapi-programmer",
       "description": "Domain Book 기반 백엔드 코드 생성",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "ureca",
         "url": "https://github.com/ureca-corp"
@@ -47,7 +47,17 @@
       "name": "flutter-ddd-builder",
       "source": "./plugins/flutter-ddd-builder",
       "description": "Domain Book 기반 Flutter 코드 생성",
-      "version": "1.0.0",
+      "version": "1.0.1",
+      "author": {
+        "name": "ureca",
+        "url": "https://github.com/ureca-corp"
+      }
+    },
+    {
+      "name": "project-docs-setup",
+      "source": "./plugins/project-docs-setup",
+      "description": "README·AGENTS·CLAUDE·ai-context 4-파일 문서화 체계 설정",
+      "version": "1.0.1",
       "author": {
         "name": "ureca",
         "url": "https://github.com/ureca-corp"
