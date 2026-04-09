@@ -62,6 +62,16 @@
         "name": "ureca",
         "url": "https://github.com/ureca-corp"
       }
+    },
+    {
+      "name": "figma2shadcn2next",
+      "source": "./plugins/figma2shadcn2next",
+      "description": "Figma 팀 라이브러리(Ureca Shadcn)를 Next.js 16 + shadcn/ui 코드로 높은 충실도로 구현하는 전문 에이전트 팩",
+      "version": "0.1.0",
+      "author": {
+        "name": "andy",
+        "url": "https://github.com/ureca-corp"
+      }
     }
   ]
 }
