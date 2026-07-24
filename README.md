@@ -109,7 +109,7 @@ Domain Book을 읽어 Flutter DDD 앱을 생성합니다. Freezed 3.x + Riverpod
 플러그인 설치 없이 [`npx skills`](https://github.com/vercel-labs/skills)로 개별 설치할 수 있는 스킬입니다.
 
 ```bash
-npx skills add ureca-corp/claude/tree/main/skills/plan-build-verify
+npx skills add ureca-corp/claude --skill plan-build-verify
 ```
 
 ### Plan Build Verify

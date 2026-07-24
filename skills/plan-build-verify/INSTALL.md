@@ -12,13 +12,17 @@ difficulty-adaptive 다중 에이전트 구현 워크플로우 스킬이다. 슬
 
 ### 방법 1: npx skills (권장)
 
-[`npx skills`](https://github.com/vercel-labs/skills)로 이 레포에서 바로 설치한다:
+[`npx skills`](https://github.com/vercel-labs/skills)로 이 레포에서 바로 설치한다. `claude` 레포는 여러 스킬이 들어갈 모노레포이므로
+`--skill` 플래그로 이 스킬만 지정한다:
 
     # user scope(내 모든 프로젝트, 전역)
-    npx skills add ureca-corp/claude/tree/main/skills/plan-build-verify -g
+    npx skills add ureca-corp/claude --skill plan-build-verify -g
 
     # 또는 project scope(현재 레포에만)
-    npx skills add ureca-corp/claude/tree/main/skills/plan-build-verify
+    npx skills add ureca-corp/claude --skill plan-build-verify
+
+    # 또는 서브디렉토리 전체 URL로 직접 지정
+    npx skills add https://github.com/ureca-corp/claude/tree/main/skills/plan-build-verify
 
 ### 방법 2: 수동 복사
 
