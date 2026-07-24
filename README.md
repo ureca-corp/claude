@@ -8,7 +8,7 @@
 
 **도메인 주도 설계 및 AI 기반 개발 도구 모음**
 
-[설치하기](#-설치-방법) · [플러그인 목록](#-플러그인) · [기여하기](./CONTRIBUTING.md)
+[설치하기](#-설치-방법) · [플러그인 목록](#-플러그인) · [독립 스킬](#-독립-스킬-skills) · [기여하기](./CONTRIBUTING.md)
 
 </div>
 
@@ -101,6 +101,22 @@ Domain Book을 읽어 Flutter DDD 앱을 생성합니다. Freezed 3.x + Riverpod
 출력: `lib/{domain}/` (models, services, pages)
 
 [📚 상세 문서](./plugins/flutter-ddd-builder/README.md)
+
+---
+
+## 🧩 독립 스킬 (Skills)
+
+플러그인 설치 없이 [`npx skills`](https://github.com/vercel-labs/skills)로 개별 설치할 수 있는 스킬입니다.
+
+```bash
+npx skills add ureca-corp/claude/tree/main/skills/plan-build-verify
+```
+
+### Plan Build Verify
+
+비자명한 코딩 작업을 **계획+난이도(tier) 판정 → 슬라이스별 구현 → tier에 맞춘 적응 리뷰(경량~풀) → 이슈 0건까지 리팩토링 → 최종 빌드/테스트 통과 보장** 파이프라인으로 끝까지 수행하는 다중 에이전트 워크플로우 스킬입니다. 슬라이스 난이도에 따라 Claude 리뷰 관점 수(1~4개)와 Codex 적대적 리뷰 여부를 자동 조절합니다.
+
+[📚 상세 문서](./skills/plan-build-verify/SKILL.md) · [설치 안내](./skills/plan-build-verify/INSTALL.md)
 
 ---
 
